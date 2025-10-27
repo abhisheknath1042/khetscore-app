@@ -1,70 +1,159 @@
-# Getting Started with Create React App
+# 🌾 KhetScore – Agricultural Practices Simulation App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+KhetScore is an interactive web-based simulation platform that helps evaluate the impact of adopting good agricultural practices (GAPs) across multiple crop seasons (Rabi & Kharif).  
+It enables users to simulate farmer decisions, assess weather impacts, and track the evolution of farm productivity scores (**KhetScore**) over time.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+- 🔐 **User Authentication** (Register/Login using local storage)
+- 🌾 **Farmer Data Import** (CSV upload with pre-loaded farmer details)
+- 🧮 **Multi-Season Simulation** (Rabi → Kharif → Rabi cycles)
+- 🌦️ **Random Weather Events** (drought, flood, pest attack, etc.)
+- 📈 **Dynamic KhetScore Calculation**
+- 📋 **Likelihood Assessment** for each chosen practice
+- 💾 **Export to CSV** (stores results per farmer)
+- 💻 **Dashboard** for tracking previous simulations
+- 🎨 **Modern UI** powered by **React + Tailwind CSS + Lucide Icons**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🛠️ Tech Stack
 
-### `npm test`
+| Layer | Technology |
+|--------|-------------|
+| Frontend | React (Create React App) |
+| Styling | Tailwind CSS |
+| CSV Handling | Papa Parse |
+| Icons | Lucide React |
+| Storage | Browser LocalStorage |
+| Deployment | GitHub Pages |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 📦 Project Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1️⃣ Clone the Repository
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+git clone https://github.com/<your-username>/khetscore-app.git
+cd khetscore-app
+npm install
+npm install react-scripts@5.0.1
+npm install papaparse lucide-react
+npm start
+```
+### Folder Structure
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+khetscore-app/
+│
+├── public/                 # Static assets
+├── src/
+│   ├── App.js              # Main React component
+│   ├── App.css             # Global styles
+│   ├── index.css           # Tailwind + base styling
+│   └── index.js            # React entry point
+│
+├── tailwind.config.js      # Tailwind configuration
+├── postcss.config.js       # PostCSS config for Tailwind
+├── package.json            # Dependencies & scripts
+└── README.md               # This file
+```
 
-### `npm run eject`
+## 🌿 Running a Simulation
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Login / Register a user
+    - Credentials are stored in your browser’s local storage.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. Upload a Farmer CSV
+    - File should include: Name, farmerID, Khetscore.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+3. Select a Farmer
+    - Enter the farmerID to load details.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+4. Choose Practices
+    - Select at least 7 from the 24 available good agricultural practices.
 
-## Learn More
+5. Weather Simulation
+    - A random weather shock (or none) affects the score.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+6. Likelihood Survey
+    - Answer how likely the farmer is to actually perform each chosen practice.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+7. Repeat for 3 Seasons
+    - The app simulates Rabi → Kharif → Rabi cycles automatically.
 
-### Code Splitting
+8. View Summary & Export Results
+    - Get a detailed report of all selections and KhetScore evolution per season.
+    - Export as .csv.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+`newScore = currentKhetscore + sum(selectedPracticeWeights) - (shockImpact * currentKhetscore)`
+- Each practice adds a weighted score bonus.
+- Random weather shocks apply a negative multiplier.
 
-### Analyzing the Bundle Size
+## 🌐 Deployment Guide (GitHub Pages)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+1️⃣ Install GitHub Pages package
 
-### Making a Progressive Web App
+```bash npm install gh-pages --save-dev ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+2️⃣ Update package.json
 
-### Advanced Configuration
+Add the following lines:
+```bash
+{
+  "homepage": "https://<your-username>.github.io/khetscore-app",
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  }
+}
+```
+🔹 Replace <your-username> with your actual GitHub username.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+3️⃣ Commit the changes
+```bash
+git add package.json
+git commit -m "Configure GitHub Pages deployment"
+git push
+```
 
-### Deployment
+4️⃣ Deploy to GitHub Pages
+```bash
+npm run deploy
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+This will:
+Build your React app (npm run build)
+Deploy it to the gh-pages branch on your GitHub repo
 
-### `npm run build` fails to minify
+5️⃣ Verify Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Visit your site at:
+
+👉 https://<your-username>.github.io/khetscore-app
+
+### 🧰 Useful Commands
+Command	Description
+```bash
+npm start	Run development server
+npm run build	Create production build
+npm run deploy	Deploy to GitHub Pages
+npm test	Run tests (if added)
+npm run lint	Lint code (optional setup)
+```
+
+### 📜 License
+
+This project is open-source and available under the MIT License.
+
+### 👨‍💻 Author
+
+Abhishek Nath  
+Software Developer.
+
+🌐 [GitHub Profile](https://github.com/abhisheknath1042)
+
+---
