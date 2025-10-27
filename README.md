@@ -133,7 +133,7 @@ Deploy it to the gh-pages branch on your GitHub repo
 
 Visit your site at:
 
-👉 https://<your-username>.github.io/khetscore-app
+👉 https://your-username.github.io/khetscore-app
 
 ### 🧰 Useful Commands
 Command	Description
