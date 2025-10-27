@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/khetscore-app/static/css/main.e04bc3b0.css",
+    "main.js": "/khetscore-app/static/js/main.a61334b3.js",
+    "static/js/453.120bd9e3.chunk.js": "/khetscore-app/static/js/453.120bd9e3.chunk.js",
+    "index.html": "/khetscore-app/index.html",
+    "main.e04bc3b0.css.map": "/khetscore-app/static/css/main.e04bc3b0.css.map",
+    "main.a61334b3.js.map": "/khetscore-app/static/js/main.a61334b3.js.map",
+    "453.120bd9e3.chunk.js.map": "/khetscore-app/static/js/453.120bd9e3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e04bc3b0.css",
+    "static/js/main.a61334b3.js"
+  ]
+}
