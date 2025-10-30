@@ -62,6 +62,10 @@ const App = () => {
   const [allSimulations, setAllSimulations] = useState([]);
   const [sessionHistory, setSessionHistory] = useState({});
   const [draftSimulation, setDraftSimulation] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [simulationToDelete, setSimulationToDelete] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [showDraftModal, setShowDraftModal] = useState(false);
 
   useEffect(() => {
@@ -210,10 +214,33 @@ const App = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleStartNewFromModal = () => {
     discardDraft();
     setScreen('farmer-lookup');
   };
+
+  const handleDeleteSimulation = (simId) => {
+    const updatedSims = allSimulations.filter(sim => sim.id !== simId);
+    setAllSimulations(updatedSims);
+    localStorage.setItem(`simulations_${currentUser.username}`, JSON.stringify(updatedSims));
+    setShowDeleteConfirm(false);
+    setSimulationToDelete(null);
+  };
+
+  const confirmDelete = (sim) => {
+    setSimulationToDelete(sim);
+    setShowDeleteConfirm(true);
+  };
+
+  const filteredSimulations = allSimulations.filter(sim => {
+    const query = searchQuery.toLowerCase();
+    return (
+      sim.farmer.name.toLowerCase().includes(query) ||
+      sim.farmer.id.toLowerCase().includes(query) ||
+      new Date(sim.timestamp).toLocaleDateString().includes(query)
+    );
+  });
 
   const handleHomeClick = () => {
     // Save draft if in middle of simulation
@@ -903,53 +930,127 @@ const App = () => {
 
           {allSimulations.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Simulations</h3>
-              <div className="space-y-3">
-                {allSimulations.slice(-5).reverse().map((sim) => (
-                  <div key={sim.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold text-gray-800">{sim.farmer.name}</p>
-                        <p className="text-sm text-gray-600">ID: {sim.farmer.id}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(sim.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <div className="text-right">
-                          <p className="text-sm text-gray-600">Score Change</p>
-                          <p className={`text-xl font-bold ${
-                            sim.farmer.finalKhetscore >= sim.farmer.initialKhetscore
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          }`}>
-                            {sim.farmer.initialKhetscore} → {sim.farmer.finalKhetscore}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">Recent Simulations</h3>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search by farmer name or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm w-64"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              {filteredSimulations.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {searchQuery ? 'No simulations found matching your search.' : 'No simulations yet.'}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredSimulations.slice(-10).reverse().map((sim) => (
+                    <div key={sim.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-gray-800">{sim.farmer.name}</p>
+                          <p className="text-sm text-gray-600">ID: {sim.farmer.id}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(sim.timestamp).toLocaleString()}
                           </p>
                         </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewSummary(sim)}
-                            className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleExportCSV(sim)}
-                            className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                          >
-                            <Download className="w-4 h-4" />
-                            Export
-                          </button>
+                        <div className="flex flex-col gap-2 items-end">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">Score Change</p>
+                            <p className={`text-xl font-bold ${
+                              sim.farmer.finalKhetscore >= sim.farmer.initialKhetscore
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            }`}>
+                              {sim.farmer.initialKhetscore} → {sim.farmer.finalKhetscore}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleViewSummary(sim)}
+                              className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                              title="View Summary"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleExportCSV(sim)}
+                              className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+                              title="Export to CSV"
+                            >
+                              <Download className="w-4 h-4" />
+                              Export
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(sim)}
+                              className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                              title="Delete Simulation"
+                            >
+                              <AlertCircle className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && simulationToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+                <h3 className="text-xl font-bold text-gray-800">Delete Simulation</h3>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to delete the simulation for{' '}
+                <strong>{simulationToDelete.farmer.name}</strong>?
+              </p>
+              <div className="bg-red-50 border border-red-200 p-3 rounded-lg mb-6">
+                <p className="text-sm text-red-800">
+                  This action cannot be undone. All data for this simulation will be permanently deleted.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleDeleteSimulation(simulationToDelete.id)}
+                  className="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setSimulationToDelete(null);
+                  }}
+                  className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
