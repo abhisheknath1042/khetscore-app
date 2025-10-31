@@ -30,10 +30,10 @@ const practices = [
 ];
 
 const weatherShocks = [
-  { name: "Drought", icon: Sun, impact: -0.15 },
-  { name: "Flood", icon: Droplets, impact: -0.20 },
-  { name: "Heavy Rain", icon: CloudRain, impact: -0.10 },
-  { name: "Pest and Disease", icon: Bug, impact: -0.12 }
+  { name: "Drought", icon: Sun, impact: -0.12 },
+  { name: "Flood", icon: Droplets, impact: -0.25 },
+  { name: "Heavy Rain", icon: CloudRain, impact: -0.15 },
+  { name: "Pest and Disease", icon: Bug, impact: -0.10 }
 ];
 
 const App = () => {
@@ -50,9 +50,6 @@ const App = () => {
   const [csvError, setCsvError] = useState('');
   const [currentFarmer, setCurrentFarmer] = useState(null);
   const [farmerID, setFarmerID] = useState('');
-  const [filteredFarmers, setFilteredFarmers] = useState([]);
-  const [showFarmerList, setShowFarmerList] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [currentSeason, setCurrentSeason] = useState(1);
   const [selectedPractices, setSelectedPractices] = useState([]);
   const [weatherShock, setWeatherShock] = useState(null);
@@ -61,12 +58,10 @@ const App = () => {
   const [error, setError] = useState('');
   const [allSimulations, setAllSimulations] = useState([]);
   const [sessionHistory, setSessionHistory] = useState({});
-  const [draftSimulation, setDraftSimulation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [showFarmerList, setShowFarmerList] = useState(false);
 
   useEffect(() => {
     // Load CSV data from public folder
@@ -115,8 +110,6 @@ const App = () => {
         setIsLoggedIn(true);
         setAuthScreen('');
         await loadUserData(user.username);
-        // Clear any existing drafts on app launch
-        localStorage.removeItem(`draft_${user.username}`);
       }
     };
     checkAuth();
@@ -128,8 +121,6 @@ const App = () => {
       if (savedSims) {
         setAllSimulations(JSON.parse(savedSims));
       }
-      // Don't load draft on app relaunch - start fresh
-      setDraftSimulation(null);
     } catch (error) {
       console.error('Error loading user data:', error);
     }
@@ -145,79 +136,13 @@ const App = () => {
       const updatedSims = [...allSimulations, newSim];
       setAllSimulations(updatedSims);
       localStorage.setItem(`simulations_${currentUser.username}`, JSON.stringify(updatedSims));
-      // Clear draft after saving complete simulation
-      localStorage.removeItem(`draft_${currentUser.username}`);
-      setDraftSimulation(null);
     } catch (error) {
       console.error('Error saving simulation:', error);
     }
   };
 
-  const saveDraft = () => {
-    try {
-      const draft = {
-        farmer: currentFarmer,
-        currentSeason,
-        selectedPractices,
-        weatherShock,
-        seasonData,
-        likelihoodAnswers,
-        sessionHistory,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem(`draft_${currentUser.username}`, JSON.stringify(draft));
-      setDraftSimulation(draft);
-    } catch (error) {
-      console.error('Error saving draft:', error);
-    }
-  };
-
-  const loadDraft = () => {
-    if (draftSimulation) {
-      setCurrentFarmer(draftSimulation.farmer);
-      setCurrentSeason(draftSimulation.currentSeason);
-      setSelectedPractices(draftSimulation.selectedPractices);
-      setWeatherShock(draftSimulation.weatherShock);
-      setSeasonData(draftSimulation.seasonData);
-      setLikelihoodAnswers(draftSimulation.likelihoodAnswers);
-      setSessionHistory(draftSimulation.sessionHistory);
-      setShowDraftModal(false);
-      
-      // Navigate to appropriate screen
-      if (draftSimulation.seasonData.length === 3) {
-        setScreen('summary');
-      } else if (Object.keys(draftSimulation.likelihoodAnswers).length > 0) {
-        setScreen('likelihood');
-      } else if (draftSimulation.weatherShock !== null) {
-        setScreen('weather-result');
-      } else if (draftSimulation.selectedPractices.length > 0) {
-        setScreen('practice-selection');
-      } else {
-        setScreen('season-intro');
-      }
-    }
-  };
-
-  const discardDraft = () => {
-    if (currentUser) {
-      localStorage.removeItem(`draft_${currentUser.username}`);
-    }
-    setDraftSimulation(null);
-    setShowDraftModal(false);
-  };
-
-  const handleBeginSimulation = () => {
-    if (draftSimulation) {
-      setShowDraftModal(true);
-    } else {
-      setScreen('farmer-lookup');
-    }
-  };
-
-  // eslint-disable-next-line no-unused-vars
-  const handleStartNewFromModal = () => {
-    discardDraft();
-    setScreen('farmer-lookup');
+  const roundScore = (score) => {
+    return Math.round(parseFloat(score));
   };
 
   const handleDeleteSimulation = (simId) => {
@@ -233,6 +158,29 @@ const App = () => {
     setShowDeleteConfirm(true);
   };
 
+  const handleSaveAndReturn = async () => {
+    await saveSimulation({
+      farmer: {
+        name: currentFarmer.Name,
+        id: currentFarmer.farmerID,
+        initialKhetscore: currentFarmer.initialKhetscore,
+        finalKhetscore: currentFarmer.currentKhetscore
+      },
+      seasons: seasonData
+    });
+    
+    // Clear all simulation data
+    setCurrentFarmer(null);
+    setCurrentSeason(1);
+    setSelectedPractices([]);
+    setWeatherShock(null);
+    setSeasonData([]);
+    setLikelihoodAnswers({});
+    setSessionHistory({});
+    setFarmerID('');
+    setScreen('dashboard');
+  };
+
   const filteredSimulations = allSimulations.filter(sim => {
     const query = searchQuery.toLowerCase();
     return (
@@ -243,18 +191,28 @@ const App = () => {
   });
 
   const handleHomeClick = () => {
-    // Save draft if in middle of simulation
-    if (currentFarmer && screen !== 'dashboard' && screen !== 'farmer-lookup') {
-      saveDraft();
-    }
+    // Clear all simulation data and return to dashboard
+    setCurrentFarmer(null);
+    setCurrentSeason(1);
+    setSelectedPractices([]);
+    setWeatherShock(null);
+    setSeasonData([]);
+    setLikelihoodAnswers({});
+    setSessionHistory({});
+    setFarmerID('');
     setScreen('dashboard');
   };
 
   const handleLogoClick = () => {
-    // Save draft if in middle of simulation
-    if (currentFarmer && screen !== 'dashboard' && screen !== 'farmer-lookup') {
-      saveDraft();
-    }
+    // Clear all simulation data and return to dashboard
+    setCurrentFarmer(null);
+    setCurrentSeason(1);
+    setSelectedPractices([]);
+    setWeatherShock(null);
+    setSeasonData([]);
+    setLikelihoodAnswers({});
+    setSessionHistory({});
+    setFarmerID('');
     setScreen('dashboard');
   };
 
@@ -322,7 +280,6 @@ const App = () => {
     if (currentUser) {
       localStorage.removeItem(`draft_${currentUser.username}`);
     }
-    setDraftSimulation(null);
     setIsLoggedIn(false);
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
@@ -332,21 +289,27 @@ const App = () => {
   };
 
   const handleFarmerLookup = () => {
+    // Check if farmer already has completed simulation
+    const existingSimulation = allSimulations.find(sim => sim.farmer.id === farmerID);
+    if (existingSimulation) {
+      setError('This farmer already has a completed simulation. Please delete it from the dashboard before creating a new one.');
+      return;
+    }
+
     const farmer = farmersData.find(f => f.farmerID === farmerID);
     if (farmer) {
       setCurrentFarmer({
         ...farmer,
-        currentKhetscore: parseFloat(farmer.Khetscore),
-        initialKhetscore: parseFloat(farmer.Khetscore)
+        currentKhetscore: roundScore(farmer.Khetscore),
+        initialKhetscore: roundScore(farmer.Khetscore)
       });
       setError('');
       setCurrentSeason(1);
       setSeasonData([]);
-      setShowDropdown(false);
       setSessionHistory({
-        season1: { practices: [], weather: null, score: parseFloat(farmer.Khetscore), likelihood: {} },
-        season2: { practices: [], weather: null, score: parseFloat(farmer.Khetscore), likelihood: {} },
-        season3: { practices: [], weather: null, score: parseFloat(farmer.Khetscore), likelihood: {} }
+        season1: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} },
+        season2: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} },
+        season3: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} }
       });
       setScreen('season-intro');
     } else {
@@ -354,27 +317,8 @@ const App = () => {
     }
   };
 
-  const handleFarmerIDChange = (value) => {
-    setFarmerID(value);
-    setError('');
-    
-    if (value.trim() === '') {
-      setFilteredFarmers([]);
-      setShowDropdown(false);
-    } else {
-      const filtered = farmersData.filter(farmer => 
-        farmer.farmerID.toLowerCase().includes(value.toLowerCase()) ||
-        farmer.Name.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredFarmers(filtered);
-      setShowDropdown(filtered.length > 0);
-    }
-  };
-
   const handleSelectFarmer = (farmer) => {
     setFarmerID(farmer.farmerID);
-    setShowDropdown(false);
-    setFilteredFarmers([]);
   };
 
   const handlePracticeToggle = (practiceId) => {
@@ -404,7 +348,7 @@ const App = () => {
     const shockImpact = shock ? shock.impact : 0;
     const newScore = Math.max(0, Math.min(100, currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)));
     
-    setCurrentFarmer(prev => ({ ...prev, currentKhetscore: parseFloat(newScore.toFixed(2)) }));
+    setCurrentFarmer(prev => ({ ...prev, currentKhetscore: roundScore(newScore) }));
     
     // Update session history
     const seasonKey = `season${currentSeason}`;
@@ -414,7 +358,7 @@ const App = () => {
         ...prev[seasonKey],
         practices: selectedPractices,
         weather: shock,
-        score: parseFloat(newScore.toFixed(2))
+        score: roundScore(newScore)
       }
     }));
     
@@ -508,27 +452,9 @@ const App = () => {
     setScreen('summary');
   };
 
-  const handleSaveAndReturn = async () => {
-    await saveSimulation({
-      farmer: {
-        name: currentFarmer.Name,
-        id: currentFarmer.farmerID,
-        initialKhetscore: currentFarmer.initialKhetscore,
-        finalKhetscore: currentFarmer.currentKhetscore
-      },
-      seasons: seasonData
-    });
-    
-    setScreen('dashboard');
-    setCurrentFarmer(null);
-    setSeasonData([]);
-    setSelectedPractices([]);
-    setCurrentSeason(1);
-  };
-
   const handleBackButton = () => {
     if (screen === 'farmer-lookup') {
-      setScreen('dashboard');
+      handleHomeClick(); // Go to dashboard and clear data
     } else if (screen === 'season-intro') {
       if (currentSeason === 1) {
         setScreen('farmer-lookup');
@@ -827,7 +753,7 @@ const App = () => {
             <p className="text-gray-600">Manage your agricultural simulation activities</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">Total Simulations</h3>
@@ -845,88 +771,21 @@ const App = () => {
                 {new Set(allSimulations.map(s => s.farmer.id)).size}
               </p>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Avg Score Change</h3>
-                <TrendingUp className="w-8 h-8 text-purple-600" />
-              </div>
-              <p className="text-4xl font-bold text-purple-700">
-                {allSimulations.length > 0
-                  ? `+${(allSimulations.reduce((sum, s) => sum + (s.farmer.finalKhetscore - s.farmer.initialKhetscore), 0) / allSimulations.length).toFixed(1)}`
-                  : '0'}
-              </p>
-            </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Start New Simulation</h3>
             <button
-              onClick={handleBeginSimulation}
+              onClick={() => {
+                setFarmerID(''); // Clear farmer ID
+                setScreen('farmer-lookup');
+              }}
               className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
             >
               <PlayCircle className="w-5 h-5" />
               Begin Simulation
             </button>
           </div>
-
-          {draftSimulation && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8 border-2 border-blue-500">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-blue-800 mb-2">Draft in Progress</h3>
-                  <p className="text-sm text-gray-600">
-                    You have an incomplete simulation that needs to be completed or deleted before starting a new one.
-                  </p>
-                </div>
-                <AlertCircle className="w-6 h-6 text-blue-600" />
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Farmer</p>
-                    <p className="font-semibold text-gray-800">{draftSimulation.farmer.Name}</p>
-                    <p className="text-sm text-gray-600">ID: {draftSimulation.farmer.farmerID}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Progress</p>
-                    <p className="font-semibold text-gray-800">Season {draftSimulation.currentSeason} of 3</p>
-                    <p className="text-sm text-gray-600">
-                      {draftSimulation.currentSeason === 1 ? 'Rabi' : draftSimulation.currentSeason === 2 ? 'Kharif' : 'Rabi'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Current Khetscore</p>
-                    <p className="font-semibold text-green-700">{draftSimulation.farmer.currentKhetscore}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Last Saved</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(draftSimulation.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={loadDraft}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <PlayCircle className="w-5 h-5" />
-                  Continue Draft
-                </button>
-                <button
-                  onClick={discardDraft}
-                  className="flex-1 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <AlertCircle className="w-5 h-5" />
-                  Delete Draft
-                </button>
-              </div>
-            </div>
-          )}
 
           {allSimulations.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -1094,39 +953,18 @@ const App = () => {
             <h2 className="text-2xl font-bold text-green-800 mb-6">Enter Farmer ID</h2>
             
             <div className="space-y-4">
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Farmer ID or Name</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Farmer ID</label>
                 <input
                   type="text"
                   value={farmerID}
-                  onChange={(e) => handleFarmerIDChange(e.target.value)}
+                  onChange={(e) => {
+                    setFarmerID(e.target.value);
+                    setError('');
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter Farmer ID or search by name"
+                  placeholder="Enter Farmer ID"
                 />
-                
-                {/* Dropdown for filtered farmers */}
-                {showDropdown && filteredFarmers.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {filteredFarmers.map((farmer) => (
-                      <button
-                        key={farmer.farmerID}
-                        onClick={() => handleSelectFarmer(farmer)}
-                        className="w-full text-left px-4 py-3 hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold text-gray-800">{farmer.Name}</p>
-                            <p className="text-sm text-gray-600">ID: {farmer.farmerID}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">Khetscore</p>
-                            <p className="font-bold text-green-700">{farmer.Khetscore}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
               
               {error && (
@@ -1246,6 +1084,36 @@ const App = () => {
   // Season Introduction Screen
   if (screen === 'season-intro') {
     const seasonType = currentSeason % 2 === 1 ? 'RABI' : 'KHARIF';
+    
+    const SingleBarChart = ({ value, label }) => {
+      const maxScore = 100;
+      const heightPercentage = (value / maxScore) * 100;
+      const barColor = '#0d3385'; // Start color (blue)
+      
+      return (
+        <div className="flex flex-col items-center">
+          <div className="text-lg font-semibold mb-2" style={{ color: barColor }}>
+            {value}
+          </div>
+          <div 
+            className="w-20 rounded-t-lg transition-all duration-500 relative"
+            style={{ 
+              height: `${heightPercentage * 1.5}px`,
+              backgroundColor: barColor,
+              minHeight: '30px'
+            }}
+          >
+            <div className="absolute -bottom-6 left-0 right-0 text-center">
+              <div className="w-20 h-1 bg-gray-300"></div>
+            </div>
+          </div>
+          <div className="text-sm text-gray-600 mt-8 text-center">
+            {label}
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -1258,22 +1126,13 @@ const App = () => {
                 <Leaf className="w-8 h-8 text-green-700" />
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleHomeClick}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
-                >
-                  <Home className="w-5 h-5" />
-                  Home
-                </button>
-                <button
-                  onClick={handleBackButton}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back
-                </button>
-              </div>
+              <button
+                onClick={handleHomeClick}
+                className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
+              >
+                <Home className="w-5 h-5" />
+                Home
+              </button>
             </div>
           </div>
         </nav>
@@ -1282,16 +1141,17 @@ const App = () => {
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">Season {currentSeason} - {seasonType} Season</h2>
-              <p className="text-gray-600">Farmer: {currentFarmer.Name}</p>
-              <div className="mt-4 inline-block bg-green-100 px-6 py-3 rounded-lg">
-                <p className="text-sm text-gray-600">Current Khetscore</p>
-                <p className="text-3xl font-bold text-green-700">{currentFarmer.currentKhetscore}</p>
+              <p className="text-gray-600 mb-4">Farmer: {currentFarmer.Name}</p>
+              
+              <div className="mt-6 flex flex-col items-center">
+                <p className="text-sm text-gray-600 mb-4">Current Khetscore</p>
+                <SingleBarChart value={currentFarmer.currentKhetscore} label="Current Score" />
               </div>
             </div>
             
             <button
               onClick={() => setScreen('practice-selection')}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2 mt-8"
             >
               Select Agricultural Practices <ChevronRight className="w-5 h-5" />
             </button>
@@ -1594,7 +1454,7 @@ const App = () => {
             return (
               <div key={idx} className="flex flex-col items-center">
                 <div className="text-sm font-semibold mb-2" style={{ color: barColor }}>
-                  {value.toFixed(1)}
+                  {value}
                 </div>
                 <div 
                   className="w-16 rounded-t-lg transition-all duration-500 relative"
@@ -1671,10 +1531,7 @@ const App = () => {
             <div className="space-y-8">
               {seasonData.map((season, idx) => {
                 const seasonScores = scores.slice(0, idx + 2);
-                const seasonLabels = ['Start'];
-                for (let i = 1; i <= idx + 1; i++) {
-                  seasonLabels.push(`After S${i}`);
-                }
+                const seasonLabels = ['Start', 'Rabi', 'Kharif', 'Rabi'].slice(0, idx + 2);
                 
                 return (
                   <div key={idx} className="border border-gray-200 rounded-lg p-6">
