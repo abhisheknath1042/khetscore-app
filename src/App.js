@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home } from 'lucide-react';
 import Papa from 'papaparse';
 
+// Agricultural practices with their weights
 const practices = [
   { id: 1, name: "Buy certified paddy seeds", weight: 0.4 },
   { id: 2, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", weight: 0.2 },
@@ -29,6 +30,7 @@ const practices = [
   { id: 24, name: "paddy transplanters, combine harvesters, tractors", weight: 0.4 }
 ];
 
+// Weather shocks with their impact on Khetscore
 const weatherShocks = [
   { name: "Drought", icon: Sun, impact: -0.12 },
   { name: "Flood", icon: Droplets, impact: -0.25 },
@@ -36,6 +38,7 @@ const weatherShocks = [
   { name: "Pest and Disease", icon: Bug, impact: -0.10 }
 ];
 
+// Main App Component
 const App = () => {
   const [authScreen, setAuthScreen] = useState('landing');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -63,6 +66,7 @@ const App = () => {
   const [simulationToDelete, setSimulationToDelete] = useState(null);
   const [showFarmerList, setShowFarmerList] = useState(false);
 
+  // Load CSV data
   useEffect(() => {
     // Load CSV data from public folder
     setCsvLoading(true);
@@ -115,6 +119,7 @@ const App = () => {
     checkAuth();
   }, []);
 
+  // Load user data
   const loadUserData = async (username) => {
     try {
       const savedSims = localStorage.getItem(`simulations_${username}`);
@@ -126,6 +131,7 @@ const App = () => {
     }
   };
 
+  // Save simulation
   const saveSimulation = async (simulationData) => {
     try {
       const newSim = {
@@ -141,10 +147,12 @@ const App = () => {
     }
   };
 
+  // Round score
   const roundScore = (score) => {
     return Math.round(parseFloat(score));
   };
 
+  // Handle delete simulation
   const handleDeleteSimulation = (simId) => {
     const updatedSims = allSimulations.filter(sim => sim.id !== simId);
     setAllSimulations(updatedSims);
@@ -153,11 +161,13 @@ const App = () => {
     setSimulationToDelete(null);
   };
 
+  // Confirm delete simulation
   const confirmDelete = (sim) => {
     setSimulationToDelete(sim);
     setShowDeleteConfirm(true);
   };
 
+  // Save and return to dashboard
   const handleSaveAndReturn = async () => {
     await saveSimulation({
       farmer: {
@@ -181,6 +191,7 @@ const App = () => {
     setScreen('dashboard');
   };
 
+  // Filter simulations based on search query
   const filteredSimulations = allSimulations.filter(sim => {
     const query = searchQuery.toLowerCase();
     return (
@@ -190,6 +201,7 @@ const App = () => {
     );
   });
 
+  // Handle home click
   const handleHomeClick = () => {
     // Clear all simulation data and return to dashboard
     setCurrentFarmer(null);
@@ -203,6 +215,7 @@ const App = () => {
     setScreen('dashboard');
   };
 
+  // Handle logo click
   const handleLogoClick = () => {
     // Clear all simulation data and return to dashboard
     setCurrentFarmer(null);
@@ -216,6 +229,7 @@ const App = () => {
     setScreen('dashboard');
   };
 
+  // Handle login
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -238,6 +252,7 @@ const App = () => {
     }
   };
 
+  // Handle register
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -275,6 +290,7 @@ const App = () => {
     }
   };
 
+  // Handle logout
   const handleLogout = () => {
     // Clear draft on logout
     if (currentUser) {
@@ -288,6 +304,7 @@ const App = () => {
     setAllSimulations([]);
   };
 
+  // Handle farmer lookup
   const handleFarmerLookup = () => {
     // Check if farmer already has completed simulation
     const existingSimulation = allSimulations.find(sim => sim.farmer.id === farmerID);
@@ -317,10 +334,12 @@ const App = () => {
     }
   };
 
+  // Handle farmer selection from list
   const handleSelectFarmer = (farmer) => {
     setFarmerID(farmer.farmerID);
   };
 
+  // Handle practice toggle
   const handlePracticeToggle = (practiceId) => {
     setSelectedPractices(prev => 
       prev.includes(practiceId) 
@@ -329,6 +348,7 @@ const App = () => {
     );
   };
 
+  // Handle practice submit
   const handlePracticeSubmit = () => {
     if (selectedPractices.length < 7) {
       setError('Please select at least 7 practices');
@@ -365,15 +385,18 @@ const App = () => {
     setScreen('weather-result');
   };
 
+  // Handle weather continue
   const handleWeatherContinue = () => {
     setScreen('likelihood');
     setLikelihoodAnswers({});
   };
 
+  // Handle likelihood change
   const handleLikelihoodChange = (practiceId, value) => {
     setLikelihoodAnswers(prev => ({ ...prev, [practiceId]: value }));
   };
 
+  // Handle likelihood submit
   const handleLikelihoodSubmit = () => {
     const seasonRecord = {
       season: currentSeason,
@@ -406,6 +429,7 @@ const App = () => {
     }
   };
 
+  // Handle export CSV
   const handleExportCSV = (simulation = null) => {
     const sim = simulation || {
       farmer: {
@@ -440,6 +464,7 @@ const App = () => {
     a.click();
   };
 
+  // Handle view summary of previous simulation
   const handleViewSummary = (simulation) => {
     // Set up the state to view a previous simulation
     const farmer = farmersData.find(f => f.farmerID === simulation.farmer.id);
@@ -452,6 +477,7 @@ const App = () => {
     setScreen('summary');
   };
 
+  // Handle back button
   const handleBackButton = () => {
     if (screen === 'farmer-lookup') {
       handleHomeClick(); // Go to dashboard and clear data
