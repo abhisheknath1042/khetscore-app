@@ -1,3 +1,5 @@
+// khetscore-app/src/App.js
+// import necessary libraries and components
 import React, { useState, useEffect } from 'react';
 import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home } from 'lucide-react';
 import Papa from 'papaparse';
@@ -37,6 +39,54 @@ const weatherShocks = [
   { name: "Heavy Rain", icon: CloudRain, impact: -0.15 },
   { name: "Pest and Disease", icon: Bug, impact: -0.10 }
 ];
+
+// Comparison Bar Chart Component
+const ComparisonBarChart = ({ values, labels, title }) => {
+  const maxScore = 100;
+  
+  return (
+    <div className="bg-gray-50 p-6 rounded-lg mt-6">
+      <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center">{title}</h4>
+      <div className="flex items-end justify-center gap-6 h-64">
+        {values.map((value, idx) => {
+          const prevValue = idx > 0 ? values[idx - 1] : value;
+          const isStart = idx === 0;
+          const isIncrease = value >= prevValue && !isStart;
+          const isDecrease = value < prevValue && !isStart;
+          
+          let barColor = '#0d3385'; // Start color (blue)
+          if (isIncrease) barColor = '#2a9e1c'; // Increase (green)
+          if (isDecrease) barColor = '#a61212'; // Decrease (red)
+          
+          const heightPercentage = (value / maxScore) * 100;
+          
+          return (
+            <div key={idx} className="flex flex-col items-center">
+              <div className="text-lg font-bold mb-2" style={{ color: barColor }}>
+                {value}
+              </div>
+              <div 
+                className="w-20 rounded-t-lg transition-all duration-500 relative"
+                style={{ 
+                  height: `${heightPercentage * 1.8}px`,
+                  backgroundColor: barColor,
+                  minHeight: '30px'
+                }}
+              >
+                <div className="absolute -bottom-8 left-0 right-0 text-center">
+                  <div className="w-20 h-1 bg-gray-300"></div>
+                </div>
+              </div>
+              <div className="text-xs text-gray-600 mt-10 text-center w-24 font-medium">
+                {labels[idx]}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 // Main App Component
 const App = () => {
@@ -213,6 +263,7 @@ const App = () => {
     setSessionHistory({});
     setFarmerID('');
     setScreen('dashboard');
+    setError('');
   };
 
   // Handle logo click
@@ -227,6 +278,7 @@ const App = () => {
     setSessionHistory({});
     setFarmerID('');
     setScreen('dashboard');
+    setError('');
   };
 
   // Handle login
@@ -957,13 +1009,6 @@ const App = () => {
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleHomeClick}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
-                >
-                  <Home className="w-5 h-5" />
-                  Home
-                </button>
-                <button
-                  onClick={handleHomeClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -1111,34 +1156,25 @@ const App = () => {
   if (screen === 'season-intro') {
     const seasonType = currentSeason % 2 === 1 ? 'RABI' : 'KHARIF';
     
-    const SingleBarChart = ({ value, label }) => {
-      const maxScore = 100;
-      const heightPercentage = (value / maxScore) * 100;
-      const barColor = '#0d3385'; // Start color (blue)
+    // Build comparison data based on current season
+    const getComparisonData = () => {
+      const values = [currentFarmer.initialKhetscore];
+      const labels = ['Initial'];
       
-      return (
-        <div className="flex flex-col items-center">
-          <div className="text-lg font-semibold mb-2" style={{ color: barColor }}>
-            {value}
-          </div>
-          <div 
-            className="w-20 rounded-t-lg transition-all duration-500 relative"
-            style={{ 
-              height: `${heightPercentage * 1.5}px`,
-              backgroundColor: barColor,
-              minHeight: '30px'
-            }}
-          >
-            <div className="absolute -bottom-6 left-0 right-0 text-center">
-              <div className="w-20 h-1 bg-gray-300"></div>
-            </div>
-          </div>
-          <div className="text-sm text-gray-600 mt-8 text-center">
-            {label}
-          </div>
-        </div>
-      );
+      if (currentSeason >= 2 && seasonData.length >= 1) {
+        values.push(seasonData[0].endScore);
+        labels.push('Season 1 Rabi');
+      }
+      
+      if (currentSeason >= 3 && seasonData.length >= 2) {
+        values.push(seasonData[1].endScore);
+        labels.push('Season 2 Kharif');
+      }
+      
+      return { values, labels };
     };
+    
+    const comparisonData = getComparisonData();
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -1163,17 +1199,18 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-2xl mx-auto p-8">
+        <div className="max-w-3xl mx-auto p-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">Season {currentSeason} - {seasonType} Season</h2>
               <p className="text-gray-600 mb-4">Farmer: {currentFarmer.Name}</p>
-              
-              <div className="mt-6 flex flex-col items-center">
-                <p className="text-sm text-gray-600 mb-4">Current Khetscore</p>
-                <SingleBarChart value={currentFarmer.currentKhetscore} label="Current Score" />
-              </div>
             </div>
+            
+            <ComparisonBarChart 
+              values={comparisonData.values}
+              labels={comparisonData.labels}
+              title="Khetscore Progress Before Season"
+            />
             
             <button
               onClick={() => setScreen('practice-selection')}
@@ -1206,7 +1243,7 @@ const App = () => {
                   onClick={handleHomeClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
                 >
-                  <Leaf className="w-5 h-5" />
+                  <Home className="w-5 h-5" />
                   Home
                 </button>
                 <button
@@ -1275,6 +1312,29 @@ const App = () => {
   // Weather Result Screen
   if (screen === 'weather-result') {
     const WeatherIcon = weatherShock ? weatherShock.icon : null;
+    const seasonType = currentSeason % 2 === 1 ? 'Rabi' : 'Kharif';
+    
+    // Build comparison data including current season result
+    const getResultComparisonData = () => {
+      const values = [currentFarmer.initialKhetscore];
+      const labels = ['Initial'];
+      
+      // Add previous seasons
+      for (let i = 0; i < currentSeason - 1; i++) {
+        if (seasonData[i]) {
+          values.push(seasonData[i].endScore);
+          labels.push(`Season ${i + 1} ${seasonData[i].seasonType}`);
+        }
+      }
+      
+      // Add current season
+      values.push(currentFarmer.currentKhetscore);
+      labels.push(`Season ${currentSeason} ${seasonType}`);
+      
+      return { values, labels };
+    };
+    
+    const resultData = getResultComparisonData();
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -1288,30 +1348,21 @@ const App = () => {
                 <Leaf className="w-8 h-8 text-green-700" />
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleHomeClick}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
-                >
-                  <Leaf className="w-5 h-5" />
-                  Home
-                </button>
-                <button
-                  onClick={handleBackButton}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back
-                </button>
-              </div>
+              <button
+                onClick={handleHomeClick}
+                className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
+              >
+                <Home className="w-5 h-5" />
+                Home
+              </button>
             </div>
           </div>
         </nav>
 
-        <div className="max-w-2xl mx-auto p-8">
+        <div className="max-w-3xl mx-auto p-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-green-800 mb-6">Season {currentSeason} Results</h2>
+              <h2 className="text-2xl font-bold text-green-800 mb-6">Season {currentSeason} {seasonType} Results</h2>
               
               {weatherShock ? (
                 <div className="mb-8">
@@ -1331,12 +1382,13 @@ const App = () => {
                 </div>
               )}
               
-              <div className="bg-gradient-to-r from-green-100 to-blue-100 p-6 rounded-lg mb-6">
-                <p className="text-sm text-gray-600 mb-2">New Khetscore</p>
-                <p className="text-4xl font-bold text-green-700">{currentFarmer.currentKhetscore}</p>
-              </div>
+              <ComparisonBarChart 
+                values={resultData.values}
+                labels={resultData.labels}
+                title={`Season ${currentSeason} ${seasonType} - Khetscore Comparison`}
+              />
               
-              <div className="text-left bg-gray-50 p-4 rounded-lg mb-6 max-h-64 overflow-y-auto">
+              <div className="text-left bg-gray-50 p-4 rounded-lg mb-6 mt-6 max-h-64 overflow-y-auto">
                 <p className="font-medium text-gray-700 mb-2">Selected Practices ({selectedPractices.length}):</p>
                 <ul className="text-sm text-gray-600 space-y-1">
                   {selectedPractices.map(id => (
@@ -1379,7 +1431,7 @@ const App = () => {
                   onClick={handleHomeClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
                 >
-                  <Leaf className="w-5 h-5" />
+                  <Home className="w-5 h-5" />
                   Home
                 </button>
                 <button
@@ -1521,7 +1573,7 @@ const App = () => {
                   onClick={handleHomeClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
                 >
-                  <Leaf className="w-5 h-5" />
+                  <Home className="w-5 h-5" />
                   Home
                 </button>
                 <button
