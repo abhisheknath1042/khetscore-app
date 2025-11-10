@@ -40,134 +40,134 @@ const weatherShocks = [
 ];
 
 // Translation object
-const translations = {
-  english: {
-    // Landing page
-    appName: "KhetScore",
-    tagline: "Agricultural Practices Simulation Platform",
-    description: "Empowering farmers through data-driven decision making.",
-    login: "Login",
-    getStarted: "Get Started",
-    register: "Register",
+// const translations = {
+//   english: {
+//     // Landing page
+//     appName: "KhetScore",
+//     tagline: "Agricultural Practices Simulation Platform",
+//     description: "Empowering farmers through data-driven decision making.",
+//     login: "Login",
+//     getStarted: "Get Started",
+//     register: "Register",
     
-    // Auth
-    welcomeBack: "Welcome Back",
-    loginToContinue: "Login to continue to KhetScore",
-    username: "Username",
-    password: "Password",
-    createAccount: "Create Account",
-    joinKhetScore: "Join KhetScore today",
-    fullName: "Full Name",
-    organization: "Organization (Optional)",
-    alreadyHaveAccount: "Already have an account? Login",
-    dontHaveAccount: "Don't have an account? Register",
-    backToHome: "← Back to Home",
+//     // Auth
+//     welcomeBack: "Welcome Back",
+//     loginToContinue: "Login to continue to KhetScore",
+//     username: "Username",
+//     password: "Password",
+//     createAccount: "Create Account",
+//     joinKhetScore: "Join KhetScore today",
+//     fullName: "Full Name",
+//     organization: "Organization (Optional)",
+//     alreadyHaveAccount: "Already have an account? Login",
+//     dontHaveAccount: "Don't have an account? Register",
+//     backToHome: "← Back to Home",
     
-    // Dashboard
-    dashboard: "Dashboard",
-    manageActivities: "Manage your agricultural simulation activities",
-    totalSimulations: "Total Simulations",
-    farmersTracked: "Farmers Tracked",
-    startNewSimulation: "Start New Simulation",
-    beginSimulation: "Begin Simulation",
-    recentSimulations: "Recent Simulations",
-    searchPlaceholder: "Search by farmer name or ID...",
+//     // Dashboard
+//     dashboard: "Dashboard",
+//     manageActivities: "Manage your agricultural simulation activities",
+//     totalSimulations: "Total Simulations",
+//     farmersTracked: "Farmers Tracked",
+//     startNewSimulation: "Start New Simulation",
+//     beginSimulation: "Begin Simulation",
+//     recentSimulations: "Recent Simulations",
+//     searchPlaceholder: "Search by farmer name or ID...",
     
-    // Simulation
-    enterFarmerID: "Enter Farmer ID",
-    farmerID: "Farmer ID",
-    continue: "Continue",
-    viewAllFarmers: "View All Farmers",
-    availableFarmers: "Available Farmers",
-    selectPractices: "Select Agricultural Practices",
-    choosePractices: "Choose at least 7 practices",
-    selected: "Selected",
-    weatherShock: "Weather Shock",
-    noWeatherShock: "No Weather Shock",
-    favorableConditions: "Favorable weather conditions this season",
-    newKhetscore: "New Khetscore",
-    selectedPractices: "Selected Practices",
-    continueToAssessment: "Continue to Assessment",
+//     // Simulation
+//     enterFarmerID: "Enter Farmer ID",
+//     farmerID: "Farmer ID",
+//     continue: "Continue",
+//     viewAllFarmers: "View All Farmers",
+//     availableFarmers: "Available Farmers",
+//     selectPractices: "Select Agricultural Practices",
+//     choosePractices: "Choose at least 7 practices",
+//     selected: "Selected",
+//     weatherShock: "Weather Shock",
+//     noWeatherShock: "No Weather Shock",
+//     favorableConditions: "Favorable weather conditions this season",
+//     newKhetscore: "New Khetscore",
+//     selectedPractices: "Selected Practices",
+//     continueToAssessment: "Continue to Assessment",
     
-    // Seasons
-    season: "Season",
-    rabiSeason: "Rabi Season",
-    kharifSeason: "Kharif Season",
-    results: "Results",
+//     // Seasons
+//     season: "Season",
+//     rabiSeason: "Rabi Season",
+//     kharifSeason: "Kharif Season",
+//     results: "Results",
     
-    // Others
-    home: "Home",
-    logout: "Logout",
-    welcome: "Welcome",
-    delete: "Delete",
-    view: "View",
-    export: "Export",
-    save: "Save & Return to Dashboard"
-  },
-  hindi: {
-    // Landing page
-    appName: "खेतस्कोर",
-    tagline: "कृषि पद्धति सिमुलेशन प्लेटफ़ॉर्म",
-    description: "डेटा-संचालित निर्णय लेने के माध्यम से किसानों को सशक्त बनाना।",
-    login: "लॉगिन",
-    getStarted: "शुरू करें",
-    register: "पंजीकरण करें",
+//     // Others
+//     home: "Home",
+//     logout: "Logout",
+//     welcome: "Welcome",
+//     delete: "Delete",
+//     view: "View",
+//     export: "Export",
+//     save: "Save & Return to Dashboard"
+//   },
+//   hindi: {
+//     // Landing page
+//     appName: "खेतस्कोर",
+//     tagline: "कृषि पद्धति सिमुलेशन प्लेटफ़ॉर्म",
+//     description: "डेटा-संचालित निर्णय लेने के माध्यम से किसानों को सशक्त बनाना।",
+//     login: "लॉगिन",
+//     getStarted: "शुरू करें",
+//     register: "पंजीकरण करें",
     
-    // Auth
-    welcomeBack: "वापसी पर स्वागत है",
-    loginToContinue: "खेतस्कोर में जारी रखने के लिए लॉगिन करें",
-    username: "उपयोगकर्ता नाम",
-    password: "पासवर्ड",
-    createAccount: "खाता बनाएँ",
-    joinKhetScore: "आज ही खेतस्कोर से जुड़ें",
-    fullName: "पूरा नाम",
-    organization: "संगठन (वैकल्पिक)",
-    alreadyHaveAccount: "पहले से खाता है? लॉगिन करें",
-    dontHaveAccount: "खाता नहीं है? पंजीकरण करें",
-    backToHome: "← होम पर वापस जाएं",
+//     // Auth
+//     welcomeBack: "वापसी पर स्वागत है",
+//     loginToContinue: "खेतस्कोर में जारी रखने के लिए लॉगिन करें",
+//     username: "उपयोगकर्ता नाम",
+//     password: "पासवर्ड",
+//     createAccount: "खाता बनाएँ",
+//     joinKhetScore: "आज ही खेतस्कोर से जुड़ें",
+//     fullName: "पूरा नाम",
+//     organization: "संगठन (वैकल्पिक)",
+//     alreadyHaveAccount: "पहले से खाता है? लॉगिन करें",
+//     dontHaveAccount: "खाता नहीं है? पंजीकरण करें",
+//     backToHome: "← होम पर वापस जाएं",
     
-    // Dashboard
-    dashboard: "डैशबोर्ड",
-    manageActivities: "अपनी कृषि सिमुलेशन गतिविधियों का प्रबंधन करें",
-    totalSimulations: "कुल सिमुलेशन",
-    farmersTracked: "किसान ट्रैक किए गए",
-    startNewSimulation: "नया सिमुलेशन शुरू करें",
-    beginSimulation: "सिमुलेशन शुरू करें",
-    recentSimulations: "हाल के सिमुलेशन",
-    searchPlaceholder: "किसान के नाम या आईडी से खोजें...",
+//     // Dashboard
+//     dashboard: "डैशबोर्ड",
+//     manageActivities: "अपनी कृषि सिमुलेशन गतिविधियों का प्रबंधन करें",
+//     totalSimulations: "कुल सिमुलेशन",
+//     farmersTracked: "किसान ट्रैक किए गए",
+//     startNewSimulation: "नया सिमुलेशन शुरू करें",
+//     beginSimulation: "सिमुलेशन शुरू करें",
+//     recentSimulations: "हाल के सिमुलेशन",
+//     searchPlaceholder: "किसान के नाम या आईडी से खोजें...",
     
-    // Simulation
-    enterFarmerID: "किसान आईडी दर्ज करें",
-    farmerID: "किसान आईडी",
-    continue: "जारी रखें",
-    viewAllFarmers: "सभी किसान देखें",
-    availableFarmers: "उपलब्ध किसान",
-    selectPractices: "कृषि पद्धतियाँ चुनें",
-    choosePractices: "कम से कम 7 पद्धतियाँ चुनें",
-    selected: "चयनित",
-    weatherShock: "मौसम का झटका",
-    noWeatherShock: "कोई मौसम झटका नहीं",
-    favorableConditions: "इस मौसम में अनुकूल मौसम की स्थिति",
-    newKhetscore: "नया खेतस्कोर",
-    selectedPractices: "चयनित पद्धतियाँ",
-    continueToAssessment: "मूल्यांकन के लिए जारी रखें",
+//     // Simulation
+//     enterFarmerID: "किसान आईडी दर्ज करें",
+//     farmerID: "किसान आईडी",
+//     continue: "जारी रखें",
+//     viewAllFarmers: "सभी किसान देखें",
+//     availableFarmers: "उपलब्ध किसान",
+//     selectPractices: "कृषि पद्धतियाँ चुनें",
+//     choosePractices: "कम से कम 7 पद्धतियाँ चुनें",
+//     selected: "चयनित",
+//     weatherShock: "मौसम का झटका",
+//     noWeatherShock: "कोई मौसम झटका नहीं",
+//     favorableConditions: "इस मौसम में अनुकूल मौसम की स्थिति",
+//     newKhetscore: "नया खेतस्कोर",
+//     selectedPractices: "चयनित पद्धतियाँ",
+//     continueToAssessment: "मूल्यांकन के लिए जारी रखें",
     
-    // Seasons
-    season: "मौसम",
-    rabiSeason: "रबी मौसम",
-    kharifSeason: "खरीफ मौसम",
-    results: "परिणाम",
+//     // Seasons
+//     season: "मौसम",
+//     rabiSeason: "रबी मौसम",
+//     kharifSeason: "खरीफ मौसम",
+//     results: "परिणाम",
     
-    // Others
-    home: "होम",
-    logout: "लॉगआउट",
-    welcome: "स्वागत है",
-    delete: "हटाएं",
-    view: "देखें",
-    export: "निर्यात करें",
-    save: "सहेजें और डैशबोर्ड पर वापस जाएं"
-  }
-};
+//     // Others
+//     home: "होम",
+//     logout: "लॉगआउट",
+//     welcome: "स्वागत है",
+//     delete: "हटाएं",
+//     view: "देखें",
+//     export: "निर्यात करें",
+//     save: "सहेजें और डैशबोर्ड पर वापस जाएं"
+//   }
+// };
 
 // Language Toggle Component
 const LanguageToggle = ({ language, setLanguage }) => {
@@ -441,7 +441,6 @@ const App = () => {
   const [registerForm, setRegisterForm] = useState({ username: '', password: '', name: '', organization: '' });
   const [authError, setAuthError] = useState('');
   const [screen, setScreen] = useState('selection'); 
-  const [selectionPath, setSelectionPath] = useState(null); 
   const [treatmentFilter, setTreatmentFilter] = useState(null); 
   const [farmersData, setFarmersData] = useState([]);
   const [csvLoading, setCsvLoading] = useState(true);
@@ -1141,7 +1140,6 @@ const App = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
           <button
             onClick={() => {
-              setSelectionPath('path1');
               setTreatmentFilter('treat1');
               setScreen('info-path1');
             }}
@@ -1157,7 +1155,6 @@ const App = () => {
           
           <button
             onClick={() => {
-              setSelectionPath('path2');
               setTreatmentFilter('treat2');
               setScreen('info-path2');
             }}
