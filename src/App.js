@@ -1,44 +1,185 @@
 // khetscore-app/src/App.js
 // import necessary libraries and components
 import React, { useState, useEffect } from 'react';
-import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home } from 'lucide-react';
+import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home, BookOpen } from 'lucide-react';
 import Papa from 'papaparse';
 
-// Agricultural practices with their weights
+// Agricultural practices with their weights, seasons, and categories
 const practices = [
-  { id: 1, name: "Buy certified paddy seeds", weight: 0.4 },
-  { id: 2, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", weight: 0.2 },
-  { id: 3, name: "Balanced fertilizer use (small, need-based doses instead of excess)", weight: 0.4 },
-  { id: 4, name: "Zinc sulfate for rice (common deficiency, low cost, high yield impact)", weight: 0.4 },
-  { id: 5, name: "IPM - Pheromone/sticky traps for pest control (low cost)", weight: 0.2 },
-  { id: 6, name: "IPM- neem sprays", weight: 0.2 },
-  { id: 7, name: "Apply organic manure (farmyard manure, cow dung, vermicompost, dhaincha green manure)", weight: 0.07 },
-  { id: 8, name: "Regular soil and water testing (often free at KVKs)", weight: 0.07 },
-  { id: 9, name: "Proper bund and drainage maintenance using family/community labor", weight: 0.15 },
-  { id: 10, name: "Live fencing (bamboo, thorn bushes) to prevent animals from entering fields", weight: 0.13 },
-  { id: 11, name: "Use free govt. apps for prices and weather (Kisan Suvidha, mKisan)", weight: 0.13 },
-  { id: 12, name: "Consult with KVK experts", weight: 0.2 },
-  { id: 13, name: "Mulching (paddy straw mulch)", weight: 0.2 },
-  { id: 14, name: "Lease small extra plots of land seasonally", weight: 0.05 },
-  { id: 15, name: "Convert fallow/waste land into cultivation (if available)", weight: 0.05 },
-  { id: 16, name: "Tube well or small borewell", weight: 0.15 },
-  { id: 17, name: "field channels", weight: 0.15 },
-  { id: 18, name: "Rainwater harvesting tanks or ponds (low-cost models, often under MGNREGA or govt. subsidy)", weight: 0.15 },
-  { id: 19, name: "Solar/diesel pumps (shared among farmer groups)", weight: 0.15 },
-  { id: 20, name: "Simple drainage channels (community effort with small cost)", weight: 0.15 },
-  { id: 21, name: "Crop insurance", weight: 0.13 },
-  { id: 22, name: "Buying improved/hybrid paddy seed", weight: 0.4 },
-  { id: 23, name: "Solar-powered irrigation pumps", weight: 0.15 },
-  { id: 24, name: "paddy transplanters, combine harvesters, tractors", weight: 0.4 }
-];
+  { id: 1, name: "Buy certified paddy seeds", category: "Productivity", weight: 0.4, season: "Before Season" },
+  { id: 2, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 3, name: "Balanced fertilizer use (small, need-based doses instead of excess)", category: "Productivity", weight: 0.4, season: "During Season" },
+  { id: 4, name: "Zinc sulfate for rice (common deficiency, low cost, high yield impact)", category: "Productivity", weight: 0.4, season: "Before Season" },
+  { id: 5, name: "IPM - Pheromone/sticky traps for pest control (low cost)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 6, name: "IPM- neem sprays", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 7, name: "Apply organic manure (farmyard manure, cow dung, vermicompost, dhaincha green manure)", category: "Nutrition", weight: 0.07, season: "During Season" },
+  { id: 8, name: "Regular soil and water testing (often free at KVKs)", category: "Nutrition", weight: 0.07, season: "Before Season" },
+  { id: 9, name: "Proper bund and drainage maintenance using family/community labor", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 10, name: "Live fencing (bamboo, thorn bushes) to prevent animals from entering fields", category: "Damage protection", weight: 0.13, season: "Before Season" },
+  { id: 11, name: "Use free govt. apps for prices and weather (Kisan Suvidha, mKisan)", category: "Damage protection", weight: 0.13, season: "During Season" },
+  { id: 12, name: "Consult with KVK experts", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 13, name: "Mulching (paddy straw mulch)", category: "Crop health", weight: 0.2, season: "Before Season" },
+  { id: 14, name: "Lease small extra plots of land seasonally", category: "farm area", weight: 0.05, season: "Before Season" },
+  { id: 15, name: "Convert fallow/waste land into cultivation (if available)", category: "farm area", weight: 0.05, season: "Before Season" },
+  { id: 16, name: "Tube well or small borewell", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 17, name: "field channels", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 18, name: "Rainwater harvesting tanks or ponds (low-cost models, often under MGNREGA or govt. subsidy)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 19, name: "Solar/diesel pumps (shared among farmer groups)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 20, name: "Simple drainage channels (community effort with small cost)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 21, name: "Crop insurance", category: "Damage protection", weight: 0.13, season: "Before Season" },
+  { id: 22, name: "Buying improved/hybrid paddy seed", category: "Productivity", weight: 0.4, season: "Before Season" },
+  { id: 23, name: "Solar-powered irrigation pumps", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 24, name: "paddy transplanters, combine harvesters, tractors", category: "Productivity", weight: 0.4, season: "After Harvest" }
+];  
 
 // Weather shocks with their impact on Khetscore
 const weatherShocks = [
-  { name: "Drought", icon: Sun, impact: -0.12 },
-  { name: "Flood", icon: Droplets, impact: -0.25 },
-  { name: "Heavy Rain", icon: CloudRain, impact: -0.15 },
-  { name: "Pest and Disease", icon: Bug, impact: -0.10 }
+  { name: "Flood", icon: Droplets, impact: -0.10 },
+  { name: "Heavy Rain", icon: CloudRain, impact: -0.10 },
+  { name: "Pest and Disease", icon: Bug, impact: -0.05 }
 ];
+
+// Translation object
+// const translations = {
+//   english: {
+//     // Landing page
+//     appName: "KhetScore",
+//     tagline: "Agricultural Practices Simulation Platform",
+//     description: "Empowering farmers through data-driven decision making.",
+//     login: "Login",
+//     getStarted: "Get Started",
+//     register: "Register",
+    
+//     // Auth
+//     welcomeBack: "Welcome Back",
+//     loginToContinue: "Login to continue to KhetScore",
+//     username: "Username",
+//     password: "Password",
+//     createAccount: "Create Account",
+//     joinKhetScore: "Join KhetScore today",
+//     fullName: "Full Name",
+//     organization: "Organization (Optional)",
+//     alreadyHaveAccount: "Already have an account? Login",
+//     dontHaveAccount: "Don't have an account? Register",
+//     backToHome: "← Back to Home",
+    
+//     // Dashboard
+//     dashboard: "Dashboard",
+//     manageActivities: "Manage your agricultural simulation activities",
+//     totalSimulations: "Total Simulations",
+//     farmersTracked: "Farmers Tracked",
+//     startNewSimulation: "Start New Simulation",
+//     beginSimulation: "Begin Simulation",
+//     recentSimulations: "Recent Simulations",
+//     searchPlaceholder: "Search by farmer name or ID...",
+    
+//     // Simulation
+//     enterFarmerID: "Enter Farmer ID",
+//     farmerID: "Farmer ID",
+//     continue: "Continue",
+//     viewAllFarmers: "View All Farmers",
+//     availableFarmers: "Available Farmers",
+//     selectPractices: "Select Agricultural Practices",
+//     choosePractices: "Choose at least 7 practices",
+//     selected: "Selected",
+//     weatherShock: "Weather Shock",
+//     noWeatherShock: "No Weather Shock",
+//     favorableConditions: "Favorable weather conditions this season",
+//     newKhetscore: "New Khetscore",
+//     selectedPractices: "Selected Practices",
+//     continueToAssessment: "Continue to Assessment",
+    
+//     // Seasons
+//     season: "Season",
+//     rabiSeason: "Rabi Season",
+//     kharifSeason: "Kharif Season",
+//     results: "Results",
+    
+//     // Others
+//     home: "Home",
+//     logout: "Logout",
+//     welcome: "Welcome",
+//     delete: "Delete",
+//     view: "View",
+//     export: "Export",
+//     save: "Save & Return to Dashboard"
+//   },
+//   hindi: {
+//     // Landing page
+//     appName: "खेतस्कोर",
+//     tagline: "कृषि पद्धति सिमुलेशन प्लेटफ़ॉर्म",
+//     description: "डेटा-संचालित निर्णय लेने के माध्यम से किसानों को सशक्त बनाना।",
+//     login: "लॉगिन",
+//     getStarted: "शुरू करें",
+//     register: "पंजीकरण करें",
+    
+//     // Auth
+//     welcomeBack: "वापसी पर स्वागत है",
+//     loginToContinue: "खेतस्कोर में जारी रखने के लिए लॉगिन करें",
+//     username: "उपयोगकर्ता नाम",
+//     password: "पासवर्ड",
+//     createAccount: "खाता बनाएँ",
+//     joinKhetScore: "आज ही खेतस्कोर से जुड़ें",
+//     fullName: "पूरा नाम",
+//     organization: "संगठन (वैकल्पिक)",
+//     alreadyHaveAccount: "पहले से खाता है? लॉगिन करें",
+//     dontHaveAccount: "खाता नहीं है? पंजीकरण करें",
+//     backToHome: "← होम पर वापस जाएं",
+    
+//     // Dashboard
+//     dashboard: "डैशबोर्ड",
+//     manageActivities: "अपनी कृषि सिमुलेशन गतिविधियों का प्रबंधन करें",
+//     totalSimulations: "कुल सिमुलेशन",
+//     farmersTracked: "किसान ट्रैक किए गए",
+//     startNewSimulation: "नया सिमुलेशन शुरू करें",
+//     beginSimulation: "सिमुलेशन शुरू करें",
+//     recentSimulations: "हाल के सिमुलेशन",
+//     searchPlaceholder: "किसान के नाम या आईडी से खोजें...",
+    
+//     // Simulation
+//     enterFarmerID: "किसान आईडी दर्ज करें",
+//     farmerID: "किसान आईडी",
+//     continue: "जारी रखें",
+//     viewAllFarmers: "सभी किसान देखें",
+//     availableFarmers: "उपलब्ध किसान",
+//     selectPractices: "कृषि पद्धतियाँ चुनें",
+//     choosePractices: "कम से कम 7 पद्धतियाँ चुनें",
+//     selected: "चयनित",
+//     weatherShock: "मौसम का झटका",
+//     noWeatherShock: "कोई मौसम झटका नहीं",
+//     favorableConditions: "इस मौसम में अनुकूल मौसम की स्थिति",
+//     newKhetscore: "नया खेतस्कोर",
+//     selectedPractices: "चयनित पद्धतियाँ",
+//     continueToAssessment: "मूल्यांकन के लिए जारी रखें",
+    
+//     // Seasons
+//     season: "मौसम",
+//     rabiSeason: "रबी मौसम",
+//     kharifSeason: "खरीफ मौसम",
+//     results: "परिणाम",
+    
+//     // Others
+//     home: "होम",
+//     logout: "लॉगआउट",
+//     welcome: "स्वागत है",
+//     delete: "हटाएं",
+//     view: "देखें",
+//     export: "निर्यात करें",
+//     save: "सहेजें और डैशबोर्ड पर वापस जाएं"
+//   }
+// };
+
+// Language Toggle Component
+const LanguageToggle = ({ language, setLanguage }) => {
+  return (
+    <button
+      onClick={() => setLanguage(language === 'english' ? 'hindi' : 'english')}
+      className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium"
+    >
+      <span className="text-sm">{language === 'english' ? '🇮🇳 हिंदी' : '🇬🇧 English'}</span>
+    </button>
+  );
+}
 
 // Comparison Bar Chart Component
 const ComparisonBarChart = ({ values, labels, title }) => {
@@ -88,16 +229,219 @@ const ComparisonBarChart = ({ values, labels, title }) => {
   );
 };
 
+// Slideshow for Treatment 1 Info Page
+const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const slides = [
+    { image: '/treat1-slide1.png', alt: 'Treatment 1 - Slide 1' },
+    { image: '/treat1-slide2.png', alt: 'Treatment 1 - Slide 2' }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-8">
+      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-green-600 text-white p-4 text-center">
+          <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
+            <Users className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-2">Treatment Group 1</h1>
+          <p className="text-green-100 text-lg">Information</p>
+        </div>
+
+        {/* Slideshow Container */}
+        <div className="relative bg-gray-900 h-96">
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <img src={slide.image} alt={slide.alt} className="w-full h-full object-cover" />
+            </div>
+          ))}
+
+          {/* Indicators */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentSlide ? 'bg-white w-8' : 'bg-white/50 hover:bg-white/75'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Arrows */}
+          <button
+            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          >
+            ←
+          </button>
+          <button
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          >
+            →
+          </button>
+        </div>
+
+        {/* Info and Buttons */}
+        <div className="p-8">
+          <div className="p-8 pt-0 flex gap-4 mt-12">
+            <button
+              onClick={() => {
+                setScreen('selection');
+                setTreatmentFilter(null);
+              }}
+              className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
+            >
+              ← Back to Selection
+            </button>
+            <button
+              onClick={() => setScreen('sim-InfoPage')}
+              className="flex-1 bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              Simulation Information →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Slideshow for Treatment 2 Info Page
+const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+    
+  // Replace these with your actual image URLs
+  const slides = [
+    {
+      image: '/treat2-slide1.png', // Put your images in public/images folder
+      alt: 'Treatment 2 - Slide 1'
+    },
+    {
+      image: '/treat2-slide2.png',
+      alt: 'Treatment 2 - Slide 2'
+    }
+  ];
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000); // Change slide every 5 seconds
+    
+    return () => clearInterval(timer);
+  }, [slides.length]);
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-8">
+      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="bg-green-600 text-white p-3 text-center">
+          <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
+            <Users className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-2">Treatment Group 1</h1>
+          <p className="text-green-100 text-lg">Information</p>
+        </div>
+        
+        {/* Slideshow Container */}
+        <div className="relative bg-gray-900 h-[30rem]">
+          {/* Slides */}
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+          
+          {/* Slide Indicators */}
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  index === currentSlide 
+                    ? 'bg-white w-8' 
+                    : 'bg-white/50 hover:bg-white/75'
+                }`}
+              />
+            ))}
+          </div>
+          
+          {/* Navigation Arrows */}
+          <button
+            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          >
+            ←
+          </button>
+          <button
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white p-3 rounded-full backdrop-blur-sm transition-all"
+          >
+            →
+          </button>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="p-8 pt-0 flex gap-4 mt-12">
+          <button
+            onClick={() => {
+              setScreen('selection');
+              setTreatmentFilter(null);
+            }}
+            className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
+          >
+            ← Back to Selection
+          </button>
+          <button
+            onClick={() => setScreen('sim-InfoPage')}
+            className="flex-1 bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            Simulation Information →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 // Main App Component
 const App = () => {
+  const [language, setLanguage] = useState('english');                // 'english' or 'odia'
   const [authScreen, setAuthScreen] = useState('landing');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ username: '', password: '', name: '', organization: '' });
   const [authError, setAuthError] = useState('');
-
-  const [screen, setScreen] = useState('dashboard');
+  const [screen, setScreen] = useState('selection'); 
+  const [treatmentFilter, setTreatmentFilter] = useState(null); 
   const [farmersData, setFarmersData] = useState([]);
   const [csvLoading, setCsvLoading] = useState(true);
   const [csvError, setCsvError] = useState('');
@@ -105,6 +449,7 @@ const App = () => {
   const [farmerID, setFarmerID] = useState('');
   const [currentSeason, setCurrentSeason] = useState(1);
   const [selectedPractices, setSelectedPractices] = useState([]);
+  const [practicesWithLikelihood, setPracticesWithLikelihood] = useState({});
   const [weatherShock, setWeatherShock] = useState(null);
   const [seasonData, setSeasonData] = useState([]);
   const [likelihoodAnswers, setLikelihoodAnswers] = useState({});
@@ -202,6 +547,12 @@ const App = () => {
     return Math.round(parseFloat(score));
   };
 
+  // Get filtered farmers based on treatment filter
+  const getFilteredFarmers = () => {
+    if (!treatmentFilter) return farmersData;
+    return farmersData.filter(farmer => farmer.treatment === treatmentFilter);
+  };
+
   // Handle delete simulation
   const handleDeleteSimulation = (simId) => {
     const updatedSims = allSimulations.filter(sim => sim.id !== simId);
@@ -244,6 +595,13 @@ const App = () => {
   // Filter simulations based on search query
   const filteredSimulations = allSimulations.filter(sim => {
     const query = searchQuery.toLowerCase();
+
+    // First filter by treatment
+    const farmer = farmersData.find(f => f.farmerID === sim.farmer.id);
+    if (treatmentFilter && farmer && farmer.treatment !== treatmentFilter) {
+      return false;
+    }
+
     return (
       sim.farmer.name.toLowerCase().includes(query) ||
       sim.farmer.id.toLowerCase().includes(query) ||
@@ -257,6 +615,7 @@ const App = () => {
     setCurrentFarmer(null);
     setCurrentSeason(1);
     setSelectedPractices([]);
+    setPracticesWithLikelihood({});
     setWeatherShock(null);
     setSeasonData([]);
     setLikelihoodAnswers({});
@@ -294,7 +653,8 @@ const App = () => {
         setCurrentUser(user);
         setIsLoggedIn(true);
         localStorage.setItem('currentUser', JSON.stringify(user));
-        setAuthScreen('');
+        setAuthScreen(null);
+        setScreen('selection');
         await loadUserData(user.username);
       } else {
         setAuthError('Invalid username or password');
@@ -336,7 +696,7 @@ const App = () => {
       setCurrentUser(newUser);
       setIsLoggedIn(true);
       localStorage.setItem('currentUser', JSON.stringify(newUser));
-      setAuthScreen('');
+      setAuthScreen('login');
     } catch (error) {
       setAuthError('Registration failed. Please try again.');
     }
@@ -352,7 +712,7 @@ const App = () => {
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
     setAuthScreen('landing');
-    setScreen('dashboard');
+    setScreen('selection');
     setAllSimulations([]);
   };
 
@@ -365,7 +725,8 @@ const App = () => {
       return;
     }
 
-    const farmer = farmersData.find(f => f.farmerID === farmerID);
+    const filteredFarmers = getFilteredFarmers();
+    const farmer = filteredFarmers.find(f => f.farmerID === farmerID);
     if (farmer) {
       setCurrentFarmer({
         ...farmer,
@@ -391,65 +752,9 @@ const App = () => {
     setFarmerID(farmer.farmerID);
   };
 
-  // Handle practice toggle
-  const handlePracticeToggle = (practiceId) => {
-    setSelectedPractices(prev => 
-      prev.includes(practiceId) 
-        ? prev.filter(id => id !== practiceId)
-        : [...prev, practiceId]
-    );
-  };
-
-  // Handle practice submit
-  const handlePracticeSubmit = () => {
-    if (selectedPractices.length < 7) {
-      setError('Please select at least 7 practices');
-      return;
-    }
-    setError('');
-    
-    const hasShock = Math.random() < 0.5;
-    const shock = hasShock ? weatherShocks[Math.floor(Math.random() * weatherShocks.length)] : null;
-    setWeatherShock(shock);
-    
-    const practiceBonus = selectedPractices.reduce((sum, id) => {
-      const practice = practices.find(p => p.id === id);
-      return sum + practice.weight;
-    }, 0);
-    
-    const shockImpact = shock ? shock.impact : 0;
-    const newScore = Math.max(0, Math.min(100, currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)));
-    
-    setCurrentFarmer(prev => ({ ...prev, currentKhetscore: roundScore(newScore) }));
-    
-    // Update session history
-    const seasonKey = `season${currentSeason}`;
-    setSessionHistory(prev => ({
-      ...prev,
-      [seasonKey]: {
-        ...prev[seasonKey],
-        practices: selectedPractices,
-        weather: shock,
-        score: roundScore(newScore)
-      }
-    }));
-    
-    setScreen('weather-result');
-  };
-
   // Handle weather continue
   const handleWeatherContinue = () => {
-    setScreen('likelihood');
-    setLikelihoodAnswers({});
-  };
-
-  // Handle likelihood change
-  const handleLikelihoodChange = (practiceId, value) => {
-    setLikelihoodAnswers(prev => ({ ...prev, [practiceId]: value }));
-  };
-
-  // Handle likelihood submit
-  const handleLikelihoodSubmit = () => {
+    // Skip directly to next season or summary since likelihood is already captured
     const seasonRecord = {
       season: currentSeason,
       seasonType: currentSeason % 2 === 1 ? 'Rabi' : 'Kharif',
@@ -461,7 +766,6 @@ const App = () => {
     
     setSeasonData(prev => [...prev, seasonRecord]);
     
-    // Update session history
     const seasonKey = `season${currentSeason}`;
     setSessionHistory(prev => ({
       ...prev,
@@ -475,10 +779,34 @@ const App = () => {
       setCurrentSeason(prev => prev + 1);
       setSelectedPractices([]);
       setWeatherShock(null);
+      setPracticesWithLikelihood({}); // Reset for next season
       setScreen('season-intro');
     } else {
       setScreen('summary');
     }
+  };
+
+  // Handle practice selection with likelihood
+  const handlePracticeSelection = (practiceId) => {
+    setPracticesWithLikelihood(prev => {
+      const newState = { ...prev };
+      if (newState[practiceId]) {
+        // If already selected, remove it
+        delete newState[practiceId];
+      } else {
+        // Add new selection without likelihood
+        newState[practiceId] = { selected: true, likelihood: null };
+      }
+      return newState;
+    });
+  };
+
+  // Handle likelihood selection for practice
+  const handleLikelihoodSelection = (practiceId, likelihood) => {
+    setPracticesWithLikelihood(prev => ({
+      ...prev,
+      [practiceId]: { ...prev[practiceId], likelihood }
+    }));
   };
 
   // Handle export CSV
@@ -678,7 +1006,7 @@ const App = () => {
             </button>
             <button
               onClick={() => {
-                setAuthScreen('landing');
+                setAuthScreen('login');
                 setAuthError('');
               }}
               className="block w-full mt-4 text-gray-600 hover:text-gray-700"
@@ -795,6 +1123,121 @@ const App = () => {
   // Dashboard (after login)
   if (!isLoggedIn) return null;
 
+  // Selection Screen (First Page)
+  if (screen === 'selection') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 flex flex-col items-center justify-center p-8">
+        <div className="text-center mb-12">
+          <div className="inline-block bg-white/10 backdrop-blur-sm p-8 rounded-full mb-6">
+            <Leaf className="w-24 h-24 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold text-white mb-6">Welcome to KhetScore</h1>
+          <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
+            Please select your category to continue
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+          <button
+            onClick={() => {
+              setTreatmentFilter('treat1');
+              setScreen('info-path1');
+            }}
+            className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
+          >
+            <div className="text-center">
+              <div className="bg-green-100 w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                <Users className="w-10 h-10 text-green-700" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">Treatment 1</h2>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => {
+              setTreatmentFilter('treat2');
+              setScreen('info-path2');
+            }}
+            className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
+          >
+            <div className="text-center">
+              <div className="bg-blue-100 w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <Users className="w-10 h-10 text-green-700" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">Treatment 2</h2>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Info Page - Path 1 with Image Slideshow
+  if (screen === 'info-path1') {
+    return <InfoPath1 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} />;
+  }
+
+  // Info Page - Path 2 with Image Slideshow
+  if (screen === 'info-path2') {
+    return <InfoPath2 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} />;
+  }
+
+  // Info Page - Simulation
+  if (screen === 'sim-InfoPage') {
+    const simImage = {
+      src: '/simulation_rules.png', // place under public/
+      alt: 'Simulation Info'
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4 sm:p-8">
+        <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+          {/* Header */}
+          <header className="bg-green-600 text-white p-4 sm:p-6 text-center">
+            <div className="inline-block bg-white/20 p-2 rounded-full mb-3">
+              <BookOpen className="w-10 h-10 text-white" aria-hidden="true" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold">Simulation Information</h1>
+          </header>
+
+          {/* Image / Content */}
+          <main className="relative bg-gray-900">
+            <div className="h-[24rem] sm:h-[30rem]">
+              <img
+                src={simImage.src}
+                alt={simImage.alt}
+                className="w-full h-full object-contain bg-gray-900"
+                onError={(e) => { e.currentTarget.alt = 'Image failed to load'; }}
+              />
+            </div>
+          </main>
+
+          {/* Action Buttons pinned to bottom within the card */}
+          <div className="p-6 sm:p-8 pt-0 mt-auto flex flex-col sm:flex-row gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                setScreen('selection');
+              }}
+              className="flex-1 bg-gray-200 text-gray-700 px-6 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition"
+            >
+              ← Back to Selection
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setScreen('dashboard')}
+              className="flex-1 bg-green-600 text-white px-6 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition shadow-lg hover:shadow-xl"
+            >
+              Continue to KhetScore →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dashboard Screen
   if (screen === 'dashboard') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -813,6 +1256,7 @@ const App = () => {
                   <p className="text-sm text-gray-600">Welcome,</p>
                   <p className="font-semibold text-gray-800">{currentUser.name}</p>
                 </div>
+                <LanguageToggle language={language} setLanguage={setLanguage} />
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
@@ -832,22 +1276,38 @@ const App = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Total Simulations (filtered by treatment) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">Total Simulations</h3>
                 <BarChart3 className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-4xl font-bold text-green-700">{allSimulations.length}</p>
+              <p className="text-4xl font-bold text-green-700">
+                {allSimulations.filter(sim => {
+                  const farmer = farmersData.find(f => f.farmerID === sim.farmer.id);
+                  return treatmentFilter && farmer ? farmer.treatment === treatmentFilter : true;
+                }).length}
+              </p>
+              <p className="text-xs text-gray-500 mt-2">Treatment: {treatmentFilter}</p>
             </div>
 
+            {/* Farmers Tracked (filtered by treatment) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">Farmers Tracked</h3>
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
               <p className="text-4xl font-bold text-blue-700">
-                {new Set(allSimulations.map(s => s.farmer.id)).size}
+                {new Set(
+                  allSimulations
+                    .filter(sim => {
+                      const farmer = farmersData.find(f => f.farmerID === sim.farmer.id);
+                      return treatmentFilter && farmer ? farmer.treatment === treatmentFilter : true;
+                    })
+                    .map(s => s.farmer.id)
+                ).size}
               </p>
+              <p className="text-xs text-gray-500 mt-2">Treatment: {treatmentFilter}</p>
             </div>
           </div>
 
@@ -1007,6 +1467,7 @@ const App = () => {
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
               <div className="flex items-center gap-4">
+                <LanguageToggle language={language} setLanguage={setLanguage} />
                 <button
                   onClick={handleHomeClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
@@ -1054,11 +1515,11 @@ const App = () => {
 
               <button
                 onClick={() => setShowFarmerList(true)}
-                disabled={csvLoading || farmersData.length === 0}
+                disabled={csvLoading || getFilteredFarmers().length === 0}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <Users className="w-5 h-5" />
-                {csvLoading ? 'Loading...' : `View All Farmers (${farmersData.length})`}
+                {csvLoading ? 'Loading...' : `View All Farmers (${getFilteredFarmers().length})`}
               </button>
             </div>
             
@@ -1072,9 +1533,14 @@ const App = () => {
                   <strong>Error:</strong> {csvError}
                 </p>
               ) : (
-                <p className="text-sm text-gray-600">
-                  <strong>Available Farmers:</strong> {farmersData.length}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <strong>Available Farmers ({treatmentFilter}):</strong> {getFilteredFarmers().length}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Showing only farmers in treatment group: <span className="font-semibold">{treatmentFilter}</span>
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -1097,9 +1563,9 @@ const App = () => {
               </div>
               
               <div className="flex-1 overflow-y-auto p-6">
-                {farmersData.length === 0 ? (
+                {getFilteredFarmers().length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-600">No farmer data available</p>
+                    <p className="text-gray-600">No farmer data available for this treatment group</p>
                   </div>
                 ) : (
                   <table className="w-full">
@@ -1113,7 +1579,7 @@ const App = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {farmersData.map((farmer, idx) => (
+                      {getFilteredFarmers().map((farmer, idx) => (
                         <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm text-gray-800">{farmer.farmerID || 'N/A'}</td>
                           <td className="px-4 py-3 text-sm text-gray-800">{farmer.Name || 'N/A'}</td>
@@ -1224,8 +1690,71 @@ const App = () => {
     );
   }
 
-  // Practice Selection Screen
+  // Practice Selection Screen with Integrated Likelihood
   if (screen === 'practice-selection') {
+    // Group practices by category
+    const groupedPractices = practices.reduce((acc, practice) => {
+      if (!acc[practice.category]) acc[practice.category] = [];
+      acc[practice.category].push(practice);
+      return acc;
+    }, {});
+
+    const selectedCount = Object.keys(practicesWithLikelihood).length;
+    const allLikelihoodsSelected = Object.values(practicesWithLikelihood).every(
+      p => p.likelihood !== null
+    );
+
+    const handleContinue = () => {
+      if (selectedCount < 1) {
+        setError('Please select at least 1 practice');
+        return;
+      }
+      if (!allLikelihoodsSelected) {
+        setError('Please select likelihood for all chosen practices');
+        return;
+      }
+      setError('');
+      
+      // Extract just the IDs for processing
+      const practiceIds = Object.keys(practicesWithLikelihood).map(id => parseInt(id));
+      setSelectedPractices(practiceIds);
+      
+      // Store likelihood answers
+      const likelihoodData = {};
+      Object.entries(practicesWithLikelihood).forEach(([id, data]) => {
+        likelihoodData[id] = data.likelihood;
+      });
+      setLikelihoodAnswers(likelihoodData);
+      
+      // Calculate score and proceed
+      const hasShock = Math.random() < 0.5;
+      const shock = hasShock ? weatherShocks[Math.floor(Math.random() * weatherShocks.length)] : null;
+      setWeatherShock(shock);
+      
+      const practiceBonus = practiceIds.reduce((sum, id) => {
+        const practice = practices.find(p => p.id === id);
+        return sum + practice.weight;
+      }, 0);
+      
+      const shockImpact = shock ? shock.impact : 0;
+      const newScore = Math.max(0, Math.min(100, currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)));
+      
+      setCurrentFarmer(prev => ({ ...prev, currentKhetscore: roundScore(newScore) }));
+      
+      const seasonKey = `season${currentSeason}`;
+      setSessionHistory(prev => ({
+        ...prev,
+        [seasonKey]: {
+          ...prev[seasonKey],
+          practices: practiceIds,
+          weather: shock,
+          score: roundScore(newScore)
+        }
+      }));
+      
+      setScreen('weather-result');
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -1238,33 +1767,24 @@ const App = () => {
                 <Leaf className="w-8 h-8 text-green-700" />
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleHomeClick}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
-                >
-                  <Home className="w-5 h-5" />
-                  Home
-                </button>
-                <button
-                  onClick={handleBackButton}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back
-                </button>
-              </div>
+              <button
+                onClick={handleHomeClick}
+                className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
+              >
+                <Home className="w-5 h-5" />
+                Home
+              </button>
             </div>
           </div>
         </nav>
 
-        <div className="max-w-4xl mx-auto p-8">
+        <div className="max-w-6xl mx-auto p-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-green-800 mb-2">Select Agricultural Practices</h2>
-              <p className="text-gray-600">Season {currentSeason} - Choose at least 7 practices</p>
+              <p className="text-gray-600">Season {currentSeason} - Choose at least 1 practice and rate likelihood</p>
               <div className="mt-2 inline-block bg-blue-100 px-4 py-2 rounded-lg">
-                <span className="font-medium text-blue-800">Selected: {selectedPractices.length}</span>
+                <span className="font-medium text-blue-800">Selected: {selectedCount}</span>
               </div>
             </div>
             
@@ -1275,34 +1795,100 @@ const App = () => {
               </div>
             )}
             
-            <div className="space-y-2 max-h-96 overflow-y-auto mb-6 pr-2">
-              {practices.map(practice => (
-                <label
-                  key={practice.id}
-                  className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                    selectedPractices.includes(practice.id)
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-200 hover:border-green-300'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedPractices.includes(practice.id)}
-                    onChange={() => handlePracticeToggle(practice.id)}
-                    className="mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">{practice.name}</span>
-                </label>
+            <div className="space-y-8 max-h-[600px] overflow-y-auto mb-6 pr-2">
+              {Object.entries(groupedPractices).map(([category, categoryPractices]) => (
+                <div key={category} className="border-b border-gray-200 pb-6 last:border-b-0">
+                  <h3 className="font-bold text-lg text-green-700 mb-4 bg-green-50 p-3 rounded-lg">
+                    {category}
+                  </h3>
+                  <div className="space-y-4">
+                    {categoryPractices.map(practice => {
+                      const isSelected = practicesWithLikelihood[practice.id]?.selected;
+                      const selectedLikelihood = practicesWithLikelihood[practice.id]?.likelihood;
+                      
+                      return (
+                        <div
+                          key={practice.id}
+                          className={`border-2 rounded-lg transition-all ${
+                            isSelected
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-200 hover:border-green-300'
+                          }`}
+                        >
+                          {/* Practice Header with Checkbox */}
+                          <label className="flex items-start gap-3 p-4 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isSelected || false}
+                              onChange={() => handlePracticeSelection(practice.id)}
+                              className="mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between gap-4">
+                                <span className="text-sm text-gray-700 font-medium flex-1">
+                                  {practice.name}
+                                </span>
+                                <div className="flex gap-3 text-xs">
+                                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">
+                                    {practice.season}
+                                  </span>
+                                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded font-semibold">
+                                    Weight: {practice.weight}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </label>
+                          
+                          {/* Likelihood Options - Only show if practice is selected */}
+                          {isSelected && (
+                            <div className="px-4 pb-4 border-t border-green-200 pt-3 mt-2 bg-white">
+                              <p className="text-xs text-gray-600 mb-2 font-medium">
+                                How likely are you to do this practice?
+                              </p>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {[
+                                  "Definitely won't do it",
+                                  "Probably won't do it",
+                                  "Probably will do it",
+                                  "Definitely will do it"
+                                ].map((option) => (
+                                  <button
+                                    key={option}
+                                    onClick={() => handleLikelihoodSelection(practice.id, option)}
+                                    className={`p-2 border-2 rounded-lg text-xs transition-all ${
+                                      selectedLikelihood === option
+                                        ? 'border-green-600 bg-green-100 text-green-800 font-semibold'
+                                        : 'border-gray-300 hover:border-green-400 text-gray-700'
+                                    }`}
+                                  >
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
             
             <button
-              onClick={handlePracticeSubmit}
-              disabled={selectedPractices.length < 7}
+              onClick={handleContinue}
+              disabled={selectedCount < 1 || !allLikelihoodsSelected}
               className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               Continue <ChevronRight className="w-5 h-5" />
             </button>
+            
+            {selectedCount > 0 && !allLikelihoodsSelected && (
+              <p className="text-sm text-orange-600 text-center mt-2">
+                Please select likelihood for all {selectedCount} chosen practices
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -1401,100 +1987,9 @@ const App = () => {
                 onClick={handleWeatherContinue}
                 className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
               >
-                Continue to Assessment <ChevronRight className="w-5 h-5" />
+                Continue with Simulation <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Likelihood Assessment Screen
-  if (screen === 'likelihood') {
-    const allAnswered = selectedPractices.every(id => likelihoodAnswers[id]);
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
-        <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-8 py-4">
-            <div className="flex justify-between items-center">
-              <button 
-                onClick={handleLogoClick}
-                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
-                <Leaf className="w-8 h-8 text-green-700" />
-                <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
-              </button>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handleHomeClick}
-                  className="flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium transition-colors"
-                >
-                  <Home className="w-5 h-5" />
-                  Home
-                </button>
-                <button
-                  onClick={handleBackButton}
-                  className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  Back
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <div className="flex-1 overflow-hidden flex flex-col max-w-6xl mx-auto w-full p-8">
-          <div className="bg-white rounded-lg shadow-lg p-6 flex flex-col h-full">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-green-800 mb-2">Practice Likelihood Assessment</h2>
-              <p className="text-gray-600">
-                Thinking about your current agricultural activities, how likely are you to actually do the practices you chose?
-              </p>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4">
-              {selectedPractices.map(practiceId => {
-                const practice = practices.find(p => p.id === practiceId);
-                return (
-                  <div key={practiceId} className="border border-gray-200 rounded-lg p-3 bg-white">
-                    <p className="text-sm font-medium text-gray-700 mb-2">{practice.name}</p>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                      {['Definitely won\'t do it', 'Probably won\'t do it', 'Probably will do it', 'Definitely will do it'].map((option) => (
-                        <label
-                          key={option}
-                          className={`flex items-center justify-center p-2 border-2 rounded-lg cursor-pointer transition-all text-xs ${
-                            likelihoodAnswers[practiceId] === option
-                              ? 'border-green-500 bg-green-50'
-                              : 'border-gray-200 hover:border-green-300'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`practice-${practiceId}`}
-                            value={option}
-                            checked={likelihoodAnswers[practiceId] === option}
-                            onChange={() => handleLikelihoodChange(practiceId, option)}
-                            className="sr-only"
-                          />
-                          <span className="text-center">{option}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            
-            <button
-              onClick={handleLikelihoodSubmit}
-              disabled={!allAnswered}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {currentSeason < 3 ? 'Continue to Next Season' : 'View Summary'} <ChevronRight className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
