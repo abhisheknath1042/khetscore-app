@@ -282,8 +282,8 @@ const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    { image: '/treat1-slide1.png', alt: 'Treatment 1 - Slide 1' },
-    { image: '/treat1-slide2.png', alt: 'Treatment 1 - Slide 2' }
+    { image: '/T1_ENG.png', alt: 'Treatment 1 - Slide 1' },
+    { image: '/T1_OD.png', alt: 'Treatment 1 - Slide 2' }
   ];
 
   useEffect(() => {
@@ -378,11 +378,11 @@ const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
   // Replace these with your actual image URLs
   const slides = [
     {
-      image: '/treat2-slide1.png', // Put your images in public/images folder
+      image: '/T2_ENG.png', // Put your images in public/images folder
       alt: 'Treatment 2 - Slide 1'
     },
     {
-      image: '/treat2-slide2.png',
+      image: '/T2_OD.png',
       alt: 'Treatment 2 - Slide 2'
     }
   ];
