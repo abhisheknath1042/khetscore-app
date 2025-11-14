@@ -30,7 +30,15 @@ const practices = [
   { id: 22, name: "Buying improved/hybrid paddy seed", category: "Productivity", weight: 0.4, season: "Before Season" },
   { id: 23, name: "Solar-powered irrigation pumps", category: "Irrigation", weight: 0.15, season: "Before Season" },
   { id: 24, name: "paddy transplanters, combine harvesters, tractors", category: "Productivity", weight: 0.4, season: "After Harvest" }
-];  
+];
+
+// Likelihood options with IDs
+const likelihoodOptions = [
+  { id: 1, label: "Definitely won't do it", contributes: false },
+  { id: 2, label: "Probably won't do it", contributes: false },
+  { id: 3, label: "Probably will do it", contributes: true },
+  { id: 4, label: "Definitely will do it", contributes: true }
+];
 
 // Weather shocks with their impact on Khetscore
 const weatherShocks = [
@@ -182,13 +190,13 @@ const LanguageToggle = ({ language, setLanguage }) => {
 }
 
 // Comparison Bar Chart Component
-const ComparisonBarChart = ({ values, labels, title }) => {
+const ComparisonBarChart = ({ values, labels, title, noWeatherValues = null }) => {
   const maxScore = 100;
   
   return (
     <div className="bg-gray-50 p-6 rounded-lg mt-6">
       <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center">{title}</h4>
-      <div className="flex items-end justify-center gap-6 h-64">
+      <div className="flex items-end justify-center gap-4 sm:gap-6 h-64">
         {values.map((value, idx) => {
           const prevValue = idx > 0 ? values[idx - 1] : value;
           const isStart = idx === 0;
@@ -203,28 +211,68 @@ const ComparisonBarChart = ({ values, labels, title }) => {
           
           return (
             <div key={idx} className="flex flex-col items-center">
-              <div className="text-lg font-bold mb-2" style={{ color: barColor }}>
+              <div className="text-sm sm:text-base font-bold mb-2" style={{ color: barColor }}>
                 {value}
               </div>
               <div 
-                className="w-20 rounded-t-lg transition-all duration-500 relative"
+                className="w-12 sm:w-16 rounded-t-lg transition-all duration-500"
                 style={{ 
                   height: `${heightPercentage * 1.8}px`,
                   backgroundColor: barColor,
                   minHeight: '30px'
                 }}
-              >
-                <div className="absolute -bottom-8 left-0 right-0 text-center">
-                  <div className="w-20 h-1 bg-gray-300"></div>
-                </div>
+              />
+              {/* Base line */}
+              <div className="w-full mt-2">
+                <div className="w-12 sm:w-16 h-1 bg-gray-300 mx-auto"></div>
               </div>
-              <div className="text-xs text-gray-600 mt-10 text-center w-24 font-medium">
+              
+              {/* Label */}
+              <div className="text-xs text-gray-600 mt-4 text-center w-24 sm:w-32 font-medium">
                 {labels[idx]}
               </div>
             </div>
           );
         })}
+        
+        {/* Single NoWeather bar at the end */}
+        {noWeatherValues && (
+          <div className="flex flex-col items-center border-l-2 border-gray-300 pl-4 sm:pl-6 ml-4 sm:ml-6">
+            <div className="text-sm sm:text-base font-bold mb-2 text-orange-600">
+              {noWeatherValues[noWeatherValues.length - 1]}
+            </div>
+            <div 
+              className="w-12 sm:w-16 rounded-t-lg transition-all duration-500"
+              style={{ 
+                height: `${(noWeatherValues[noWeatherValues.length - 1] / maxScore) * 1.8 * 100}px`,
+                backgroundColor: '#f97316',
+                minHeight: '30px'
+              }}
+            />
+            {/* Base line */}
+            <div className="w-full mt-2">
+              <div className="w-12 sm:w-16 h-1 bg-gray-300 mx-auto"></div>
+            </div>
+            
+            {/* Label */}
+            <div className="text-xs text-gray-600 mt-4 text-center w-24 sm:w-32 font-medium">
+              No Weather Score
+            </div>
+          </div>
+        )}
       </div>
+      {noWeatherValues && (
+        <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-600"></div>
+            <span>With Weather Impact</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-orange-500"></div>
+            <span>Without Weather Impact</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -234,8 +282,8 @@ const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
-    { image: '/treat1-slide1.png', alt: 'Treatment 1 - Slide 1' },
-    { image: '/treat1-slide2.png', alt: 'Treatment 1 - Slide 2' }
+    { image: '/T1_ENG.png', alt: 'Treatment 1 - Slide 1' },
+    { image: '/T1_OD.png', alt: 'Treatment 1 - Slide 2' }
   ];
 
   useEffect(() => {
@@ -330,11 +378,11 @@ const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
   // Replace these with your actual image URLs
   const slides = [
     {
-      image: '/treat2-slide1.png', // Put your images in public/images folder
+      image: '/T2_ENG.png', // Put your images in public/images folder
       alt: 'Treatment 2 - Slide 1'
     },
     {
-      image: '/treat2-slide2.png',
+      image: '/T2_OD.png',
       alt: 'Treatment 2 - Slide 2'
     }
   ];
@@ -460,6 +508,8 @@ const App = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
   const [showFarmerList, setShowFarmerList] = useState(false);
+  const [noWeatherKhetscore, setNoWeatherKhetscore] = useState(null);
+  const [isViewingExisting, setIsViewingExisting] = useState(false);
 
   // Load CSV data
   useEffect(() => {
@@ -568,17 +618,20 @@ const App = () => {
     setShowDeleteConfirm(true);
   };
 
-  // Save and return to dashboard
+  // Confirm delete simulation
   const handleSaveAndReturn = async () => {
-    await saveSimulation({
-      farmer: {
-        name: currentFarmer.Name,
-        id: currentFarmer.farmerID,
-        initialKhetscore: currentFarmer.initialKhetscore,
-        finalKhetscore: currentFarmer.currentKhetscore
-      },
-      seasons: seasonData
-    });
+    // Only save if this is a new simulation, not viewing existing
+    if (!isViewingExisting) {
+      await saveSimulation({
+        farmer: {
+          name: currentFarmer.Name,
+          id: currentFarmer.farmerID,
+          initialKhetscore: currentFarmer.initialKhetscore,
+          finalKhetscore: currentFarmer.currentKhetscore
+        },
+        seasons: seasonData
+      });
+    }
     
     // Clear all simulation data
     setCurrentFarmer(null);
@@ -589,6 +642,8 @@ const App = () => {
     setLikelihoodAnswers({});
     setSessionHistory({});
     setFarmerID('');
+    setNoWeatherKhetscore(null);
+    setIsViewingExisting(false); // Reset flag
     setScreen('dashboard');
   };
 
@@ -621,9 +676,11 @@ const App = () => {
     setLikelihoodAnswers({});
     setSessionHistory({});
     setFarmerID('');
+    setNoWeatherKhetscore(null);
+    setIsViewingExisting(false);
     setScreen('dashboard');
     setError('');
-  };
+  }
 
   // Handle logo click
   const handleLogoClick = () => {
@@ -728,18 +785,20 @@ const App = () => {
     const filteredFarmers = getFilteredFarmers();
     const farmer = filteredFarmers.find(f => f.farmerID === farmerID);
     if (farmer) {
+      const initialScore = roundScore(farmer.Khetscore);
       setCurrentFarmer({
         ...farmer,
-        currentKhetscore: roundScore(farmer.Khetscore),
-        initialKhetscore: roundScore(farmer.Khetscore)
+        currentKhetscore: initialScore,
+        initialKhetscore: initialScore
       });
+      setNoWeatherKhetscore(initialScore); // Initialize noWeatherKhetscore
       setError('');
       setCurrentSeason(1);
       setSeasonData([]);
       setSessionHistory({
-        season1: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} },
-        season2: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} },
-        season3: { practices: [], weather: null, score: roundScore(farmer.Khetscore), likelihood: {} }
+        season1: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
+        season2: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
+        season3: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} }
       });
       setScreen('season-intro');
     } else {
@@ -759,8 +818,10 @@ const App = () => {
       season: currentSeason,
       seasonType: currentSeason % 2 === 1 ? 'Rabi' : 'Kharif',
       practices: selectedPractices.map(id => practices.find(p => p.id === id).name),
+      practiceIds: selectedPractices,
       weatherShock: weatherShock ? weatherShock.name : 'None',
       endScore: currentFarmer.currentKhetscore,
+      noWeatherScore: noWeatherKhetscore,
       likelihood: { ...likelihoodAnswers }
     };
     
@@ -771,7 +832,8 @@ const App = () => {
       ...prev,
       [seasonKey]: {
         ...prev[seasonKey],
-        likelihood: { ...likelihoodAnswers }
+        likelihood: { ...likelihoodAnswers },
+        noWeatherScore: noWeatherKhetscore
       }
     }));
     
@@ -802,12 +864,19 @@ const App = () => {
   };
 
   // Handle likelihood selection for practice
-  const handleLikelihoodSelection = (practiceId, likelihood) => {
+  const handleLikelihoodSelection = (practiceId, likelihoodLabel) => {
+    // Find the likelihood ID from the label
+    const likelihoodOption = likelihoodOptions.find(opt => opt.label === likelihoodLabel);
+    
     setPracticesWithLikelihood(prev => ({
       ...prev,
-      [practiceId]: { ...prev[practiceId], likelihood }
+      [practiceId]: { 
+        ...prev[practiceId], 
+        likelihood: likelihoodLabel,
+        likelihoodId: likelihoodOption.id
+      }
     }));
-  };
+  }
 
   // Handle export CSV
   const handleExportCSV = (simulation = null) => {
@@ -824,15 +893,42 @@ const App = () => {
       Name: sim.farmer.name,
       farmerID: sim.farmer.id,
       InitialKhetscore: sim.farmer.initialKhetscore,
-      Season1_Practices: sim.seasons[0].practices.join('; '),
+      
+      // Season 1
+      Season1_Practices: sim.seasons[0].practiceIds ? sim.seasons[0].practiceIds.join('; ') : '',
+      Season1_Likelihood: sim.seasons[0].practiceIds && sim.seasons[0].likelihood 
+        ? sim.seasons[0].practiceIds.map(id => {
+            const likelihood = sim.seasons[0].likelihood[id];
+            return `${id}_${likelihood.id}`;
+          }).join('; ')
+        : '',
       Season1_WeatherShock: sim.seasons[0].weatherShock,
       Season1_EndScore: sim.seasons[0].endScore,
-      Season2_Practices: sim.seasons[1].practices.join('; '),
+      Season1_NoWeatherScore: sim.seasons[0].noWeatherScore || sim.seasons[0].endScore,
+      
+      // Season 2
+      Season2_Practices: sim.seasons[1].practiceIds ? sim.seasons[1].practiceIds.join('; ') : '',
+      Season2_Likelihood: sim.seasons[1].practiceIds && sim.seasons[1].likelihood
+        ? sim.seasons[1].practiceIds.map(id => {
+            const likelihood = sim.seasons[1].likelihood[id];
+            return `${id}_${likelihood.id}`;
+          }).join('; ')
+        : '',
       Season2_WeatherShock: sim.seasons[1].weatherShock,
       Season2_EndScore: sim.seasons[1].endScore,
-      Season3_Practices: sim.seasons[2].practices.join('; '),
+      Season2_NoWeatherScore: sim.seasons[1].noWeatherScore || sim.seasons[1].endScore,
+      
+      // Season 3
+      Season3_Practices: sim.seasons[2].practiceIds ? sim.seasons[2].practiceIds.join('; ') : '',
+      Season3_Likelihood: sim.seasons[2].practiceIds && sim.seasons[2].likelihood
+        ? sim.seasons[2].practiceIds.map(id => {
+            const likelihood = sim.seasons[2].likelihood[id];
+            return `${id}_${likelihood.id}`;
+          }).join('; ')
+        : '',
       Season3_WeatherShock: sim.seasons[2].weatherShock,
-      Season3_EndScore: sim.seasons[2].endScore
+      Season3_EndScore: sim.seasons[2].endScore,
+      Season3_NoWeatherScore: sim.seasons[2].noWeatherScore || sim.seasons[2].endScore
     }];
     
     const csv = Papa.unparse(csvData);
@@ -854,6 +950,7 @@ const App = () => {
       initialKhetscore: simulation.farmer.initialKhetscore
     });
     setSeasonData(simulation.seasons);
+    setIsViewingExisting(true); // Mark as viewing existing
     setScreen('summary');
   };
 
@@ -1719,27 +1816,44 @@ const App = () => {
       const practiceIds = Object.keys(practicesWithLikelihood).map(id => parseInt(id));
       setSelectedPractices(practiceIds);
       
-      // Store likelihood answers
+      // Store likelihood answers with IDs
       const likelihoodData = {};
       Object.entries(practicesWithLikelihood).forEach(([id, data]) => {
-        likelihoodData[id] = data.likelihood;
+        likelihoodData[id] = {
+          label: data.likelihood,
+          id: data.likelihoodId
+        };
       });
       setLikelihoodAnswers(likelihoodData);
       
-      // Calculate score and proceed
+      // Calculate score - only practices with "Probably will do it" (3) or "Definitely will do it" (4) contribute
+      const practiceBonus = practiceIds.reduce((sum, id) => {
+        const practice = practices.find(p => p.id === id);
+        const likelihoodId = practicesWithLikelihood[id].likelihoodId;
+        
+        // Only add weight if likelihood is 3 or 4
+        if (likelihoodId === 3 || likelihoodId === 4) {
+          return sum + practice.weight;
+        }
+        return sum;
+      }, 0);
+      
+      // Determine weather shock
       const hasShock = Math.random() < 0.5;
       const shock = hasShock ? weatherShocks[Math.floor(Math.random() * weatherShocks.length)] : null;
       setWeatherShock(shock);
       
-      const practiceBonus = practiceIds.reduce((sum, id) => {
-        const practice = practices.find(p => p.id === id);
-        return sum + practice.weight;
-      }, 0);
-      
+      // Calculate score WITH weather impact
       const shockImpact = shock ? shock.impact : 0;
       const newScore = Math.max(0, Math.min(100, currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)));
       
+      // Calculate score WITHOUT weather impact (noWeatherKhetscore)
+      // Use the current noWeatherKhetscore if it exists, otherwise use initial score
+      const currentNoWeatherBase = noWeatherKhetscore !== null ? noWeatherKhetscore : currentFarmer.initialKhetscore;
+      const newNoWeatherScore = Math.max(0, Math.min(100, currentNoWeatherBase + practiceBonus));
+      
       setCurrentFarmer(prev => ({ ...prev, currentKhetscore: roundScore(newScore) }));
+      setNoWeatherKhetscore(roundScore(newNoWeatherScore));
       
       const seasonKey = `season${currentSeason}`;
       setSessionHistory(prev => ({
@@ -1748,7 +1862,8 @@ const App = () => {
           ...prev[seasonKey],
           practices: practiceIds,
           weather: shock,
-          score: roundScore(newScore)
+          score: roundScore(newScore),
+          noWeatherScore: roundScore(newNoWeatherScore)
         }
       }));
       
@@ -1847,22 +1962,17 @@ const App = () => {
                                 How likely are you to do this practice?
                               </p>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                                {[
-                                  "Definitely won't do it",
-                                  "Probably won't do it",
-                                  "Probably will do it",
-                                  "Definitely will do it"
-                                ].map((option) => (
+                                {likelihoodOptions.map((option) => (
                                   <button
-                                    key={option}
-                                    onClick={() => handleLikelihoodSelection(practice.id, option)}
+                                    key={option.id}
+                                    onClick={() => handleLikelihoodSelection(practice.id, option.label)}
                                     className={`p-2 border-2 rounded-lg text-xs transition-all ${
-                                      selectedLikelihood === option
+                                      selectedLikelihood === option.label
                                         ? 'border-green-600 bg-green-100 text-green-800 font-semibold'
                                         : 'border-gray-300 hover:border-green-400 text-gray-700'
                                     }`}
                                   >
-                                    {option}
+                                    {option.label}
                                   </button>
                                 ))}
                               </div>
@@ -1900,7 +2010,7 @@ const App = () => {
     const WeatherIcon = weatherShock ? weatherShock.icon : null;
     const seasonType = currentSeason % 2 === 1 ? 'Rabi' : 'Kharif';
     
-    // Build comparison data including current season result
+    // Build comparison data including current season result (WITH weather)
     const getResultComparisonData = () => {
       const values = [currentFarmer.initialKhetscore];
       const labels = ['Initial'];
@@ -1920,7 +2030,28 @@ const App = () => {
       return { values, labels };
     };
     
+    // Build comparison data WITHOUT weather impact
+    const getNoWeatherComparisonData = () => {
+      const values = [currentFarmer.initialKhetscore];
+      const labels = ['Initial'];
+      
+      // Add previous seasons (no weather scores)
+      for (let i = 0; i < currentSeason - 1; i++) {
+        if (seasonData[i]) {
+          values.push(seasonData[i].noWeatherScore);
+          labels.push(`Season ${i + 1} ${seasonData[i].seasonType}`);
+        }
+      }
+      
+      // Add current season
+      values.push(noWeatherKhetscore);
+      labels.push(`Season ${currentSeason} ${seasonType}`);
+      
+      return { values, labels };
+    };
+    
     const resultData = getResultComparisonData();
+    const noWeatherData = getNoWeatherComparisonData();
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -1971,6 +2102,7 @@ const App = () => {
               <ComparisonBarChart 
                 values={resultData.values}
                 labels={resultData.labels}
+                noWeatherValues={noWeatherData.values}
                 title={`Season ${currentSeason} ${seasonType} - Khetscore Comparison`}
               />
               
@@ -2003,6 +2135,13 @@ const App = () => {
       seasonData[0]?.endScore || currentFarmer.initialKhetscore,
       seasonData[1]?.endScore || currentFarmer.initialKhetscore,
       seasonData[2]?.endScore || currentFarmer.initialKhetscore
+    ];
+    
+    const noWeatherScores = [
+      currentFarmer.initialKhetscore,
+      seasonData[0]?.noWeatherScore || currentFarmer.initialKhetscore,
+      seasonData[1]?.noWeatherScore || currentFarmer.initialKhetscore,
+      seasonData[2]?.noWeatherScore || currentFarmer.initialKhetscore
     ];
 
     const VerticalBarChart = ({ values, labels, showInitialOnly = false }) => {
@@ -2051,6 +2190,173 @@ const App = () => {
       );
     };
 
+    //   return (
+    //     <div className="relative">
+    //       <div className="flex items-end justify-center gap-3 sm:gap-4 h-64">
+    //         {values.map((value, idx) => {
+    //           const prevValue = idx > 0 ? values[idx - 1] : value;
+    //           const isStart = idx === 0;
+    //           const isIncrease = value >= prevValue && !isStart;
+    //           const isDecrease = value < prevValue && !isStart;
+
+    //           let barColor = "#0d3385";
+    //           if (isIncrease) barColor = "#2a9e1c";
+    //           if (isDecrease) barColor = "#a61212";
+
+    //           const heightPercentage = (value / maxScore) * 100;
+    //           const noWeatherValue = noWeatherValues[idx];
+    //           const noWeatherHeight = (noWeatherValue / maxScore) * 100;
+
+    //           return (
+    //             <div key={idx} className="flex flex-col items-center">
+    //               {/* Container for both bars */}
+    //               <div className="flex gap-1 sm:gap-2 items-end">
+    //                 {/* Main bar */}
+    //                 <div className="flex flex-col items-center">
+    //                   <div className="text-xs sm:text-sm font-semibold mb-2" style={{ color: barColor }}>
+    //                     {value}
+    //                   </div>
+    //                   <div
+    //                     className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+    //                     style={{
+    //                       height: `${heightPercentage * 2}px`,
+    //                       backgroundColor: barColor,
+    //                       minHeight: "20px",
+    //                     }}
+    //                   />
+    //                 </div>
+
+    //                 {/* NoWeather bar (orange) */}
+    //                 <div className="flex flex-col items-center">
+    //                   <div className="text-xs sm:text-sm font-semibold mb-2 text-orange-600">
+    //                     {noWeatherValue}
+    //                   </div>
+    //                   <div
+    //                     className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+    //                     style={{
+    //                       height: `${noWeatherHeight * 2}px`,
+    //                       backgroundColor: "#f97316",
+    //                       minHeight: "20px",
+    //                     }}
+    //                   />
+    //                 </div>
+    //               </div>
+
+    //               {/* Base line */}
+    //               <div className="w-full mt-2">
+    //                 <div className="w-20 sm:w-24 h-1 bg-gray-300 mx-auto"></div>
+    //               </div>
+
+    //               {/* Season label */}
+    //               <div className="text-xs text-gray-700 mt-4 text-center w-20 sm:w-24">
+    //                 {labels[idx]}
+    //               </div>
+    //             </div>
+    //           );
+    //         })}
+    //       </div>
+
+    //       {/* Legend */}
+    //       <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs sm:text-sm">
+    //         <div className="flex items-center gap-2">
+    //           <div className="w-4 h-4 bg-blue-600"></div>
+    //           <span>With Weather</span>
+    //         </div>
+    //         <div className="flex items-center gap-2">
+    //           <div className="w-4 h-4 bg-orange-500"></div>
+    //           <span>Without Weather</span>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   );
+    // };
+
+    const VerticalBarChartCombined = ({ values, noWeatherValues, labels }) => {
+      const maxScore = 100;
+
+      return (
+        <div className="relative">
+          <div className="flex items-end justify-center gap-3 sm:gap-4 h-64">
+            {values.map((value, idx) => {
+              const prevValue = idx > 0 ? values[idx - 1] : value;
+              const isStart = idx === 0;
+              const isIncrease = value >= prevValue && !isStart;
+              const isDecrease = value < prevValue && !isStart;
+
+              let barColor = "#0d3385";
+              if (isIncrease) barColor = "#2a9e1c";
+              if (isDecrease) barColor = "#a61212";
+
+              const heightPercentage = (value / maxScore) * 100;
+
+              return (
+                <div key={idx} className="flex flex-col items-center">
+                  <div className="text-xs sm:text-sm font-semibold mb-2" style={{ color: barColor }}>
+                    {value}
+                  </div>
+                  <div
+                    className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+                    style={{
+                      height: `${heightPercentage * 2}px`,
+                      backgroundColor: barColor,
+                      minHeight: "20px",
+                    }}
+                  />
+                  {/* Base line */}
+                  <div className="w-full mt-2">
+                    <div className="w-10 sm:w-12 h-1 bg-gray-300 mx-auto"></div>
+                  </div>
+
+                  {/* Season label */}
+                  <div className="text-xs text-gray-700 mt-4 text-center w-20 sm:w-24">
+                    {labels[idx]}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Single NoWeather bar at the end */}
+            {noWeatherValues && (
+              <div className="flex flex-col items-center border-l-2 border-gray-300 pl-3 sm:pl-4 ml-3 sm:ml-4">
+                <div className="text-xs sm:text-sm font-semibold mb-2 text-orange-600">
+                  {noWeatherValues[noWeatherValues.length - 1]}
+                </div>
+                <div
+                  className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+                  style={{
+                    height: `${(noWeatherValues[noWeatherValues.length - 1] / maxScore) * 2 * 100}px`,
+                    backgroundColor: "#f97316",
+                    minHeight: "20px",
+                  }}
+                />
+                {/* Base line */}
+                <div className="w-full mt-2">
+                  <div className="w-10 sm:w-12 h-1 bg-gray-300 mx-auto"></div>
+                </div>
+
+                {/* Label */}
+                <div className="text-xs text-gray-700 mt-4 text-center w-20 sm:w-24">
+                  No Weather
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs sm:text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-600"></div>
+              <span>With Weather Impact</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-orange-500"></div>
+              <span>Without Weather Impact</span>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -2076,14 +2382,13 @@ const App = () => {
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                  Back
                 </button>
               </div>
             </div>
           </div>
         </nav>
 
-        <div className="max-w-6xl mx-auto p-8">
+        <div className="max-w-8xl mx-auto p-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">Simulation Complete!</h2>
@@ -2104,6 +2409,7 @@ const App = () => {
             <div className="space-y-8">
               {seasonData.map((season, idx) => {
                 const seasonScores = scores.slice(0, idx + 2);
+                const seasonNoWeatherScores = noWeatherScores.slice(0, idx + 2);
                 const seasonLabels = ['Start', 'Rabi', 'Kharif', 'Rabi'].slice(0, idx + 2);
                 
                 return (
@@ -2118,31 +2424,42 @@ const App = () => {
                             </h3>
                             <p className="text-sm text-gray-600">Weather: {season.weatherShock}</p>
                           </div>
-                          <div className="bg-green-100 px-4 py-2 rounded-lg">
-                            <p className="text-sm text-gray-600">End Score</p>
-                            <p className="text-xl font-bold text-green-700">{season.endScore}</p>
+                          <div className="space-y-2">
+                            <div className="bg-green-100 px-4 py-2 rounded-lg">
+                              <p className="text-xs text-gray-600">With Weather</p>
+                              <p className="text-lg font-bold text-green-700">{season.endScore}</p>
+                            </div>
+                            <div className="bg-blue-100 px-4 py-2 rounded-lg">
+                              <p className="text-xs text-gray-600">No Weather</p>
+                              <p className="text-lg font-bold text-blue-700">{season.noWeatherScore}</p>
+                            </div>
                           </div>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-2">
-                            Practices Selected ({season.practices.length}):
+                            Practices Selected ({season.practiceIds?.length || season.practices.length}):
                           </p>
                           <ul className="text-sm text-gray-600 space-y-1 max-h-48 overflow-y-auto">
-                            {season.practices.map((practice, pIdx) => (
-                              <li key={pIdx}>• {practice}</li>
-                            ))}
+                            {season.practices.map((practice, pIdx) => {
+                              return (
+                                <li key={pIdx} className="flex justify-between">
+                                  <span>• {practice}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>
                       
-                      {/* Right: Vertical Bar Chart */}
+                      {/* Right: Combined Chart */}
                       <div className="flex items-center justify-center bg-gray-50 rounded-lg p-4">
-                        <div>
+                        <div className="w-full">
                           <h4 className="text-sm font-semibold text-gray-700 mb-4 text-center">
                             Score Progression
                           </h4>
-                          <VerticalBarChart 
+                          <VerticalBarChartCombined 
                             values={seasonScores}
+                            noWeatherValues={seasonNoWeatherScores}
                             labels={seasonLabels}
                           />
                         </div>
