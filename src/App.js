@@ -1339,7 +1339,7 @@ const App = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-8 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 ">
             <div className="flex justify-between items-center">
               <button 
                 onClick={handleLogoClick}
@@ -1348,31 +1348,33 @@ const App = () => {
                 <Leaf className="w-8 h-8 text-green-700" />
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Welcome,</p>
-                  <p className="font-semibold text-gray-800">{currentUser.name}</p>
+              <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs sm:text-sm text-gray-600">Welcome,</p>
+                  <p className="text-sm sm:text-base font-semibold text-gray-800">{currentUser.name}</p>
                 </div>
-                <LanguageToggle language={language} setLanguage={setLanguage} />
+                <div className="hidden sm:block">
+                  <LanguageToggle language={language} setLanguage={setLanguage} />
+                </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+                  className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-red-600 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">Logout</span>
                 </button>
               </div>
             </div>
           </div>
         </nav>
 
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
             <p className="text-gray-600">Manage your agricultural simulation activities</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Total Simulations (filtered by treatment) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
@@ -1452,8 +1454,8 @@ const App = () => {
               ) : (
                 <div className="space-y-3">
                   {filteredSimulations.slice(-10).reverse().map((sim) => (
-                    <div key={sim.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex justify-between items-start">
+                    <div key={sim.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
                         <div>
                           <p className="font-semibold text-gray-800">{sim.farmer.name}</p>
                           <p className="text-sm text-gray-600">ID: {sim.farmer.id}</p>
@@ -1472,10 +1474,10 @@ const App = () => {
                               {sim.farmer.initialKhetscore} → {sim.farmer.finalKhetscore}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => handleViewSummary(sim)}
-                              className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                              className="flex items-center gap-1 bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="View Summary"
                             >
                               <Eye className="w-4 h-4" />
@@ -1483,7 +1485,7 @@ const App = () => {
                             </button>
                             <button
                               onClick={() => handleExportCSV(sim)}
-                              className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+                              className="flex items-center gap-1 bg-green-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="Export to CSV"
                             >
                               <Download className="w-4 h-4" />
@@ -1491,7 +1493,7 @@ const App = () => {
                             </button>
                             <button
                               onClick={() => confirmDelete(sim)}
-                              className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                              className="flex items-center gap-1 bg-red-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="Delete Simulation"
                             >
                               <AlertCircle className="w-4 h-4" />
@@ -1762,8 +1764,8 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-3xl mx-auto p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">Season {currentSeason} - {seasonType} Season</h2>
               <p className="text-gray-600 mb-4">Farmer: {currentFarmer.Name}</p>
@@ -1893,8 +1895,8 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-6xl mx-auto p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-green-800 mb-2">Select Agricultural Practices</h2>
               <p className="text-gray-600">Season {currentSeason} - Choose at least 1 practice and rate likelihood</p>
