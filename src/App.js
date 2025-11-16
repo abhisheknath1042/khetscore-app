@@ -4,32 +4,46 @@ import React, { useState, useEffect } from 'react';
 import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home, BookOpen } from 'lucide-react';
 import Papa from 'papaparse';
 
-// Agricultural practices with their weights, seasons, and categories
+// Agricultural practices for Treatment 1 with their weights, seasons, and categories
 const practices = [
-  { id: 1, name: "Buy certified paddy seeds", category: "Productivity", weight: 0.4, season: "Before Season" },
-  { id: 2, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", category: "Crop health", weight: 0.2, season: "During Season" },
-  { id: 3, name: "Balanced fertilizer use (small, need-based doses instead of excess)", category: "Productivity", weight: 0.4, season: "During Season" },
-  { id: 4, name: "Zinc sulfate for rice (common deficiency, low cost, high yield impact)", category: "Productivity", weight: 0.4, season: "Before Season" },
-  { id: 5, name: "IPM - Pheromone/sticky traps for pest control (low cost)", category: "Crop health", weight: 0.2, season: "During Season" },
-  { id: 6, name: "IPM- neem sprays", category: "Crop health", weight: 0.2, season: "During Season" },
-  { id: 7, name: "Apply organic manure (farmyard manure, cow dung, vermicompost, dhaincha green manure)", category: "Nutrition", weight: 0.07, season: "During Season" },
-  { id: 8, name: "Regular soil and water testing (often free at KVKs)", category: "Nutrition", weight: 0.07, season: "Before Season" },
-  { id: 9, name: "Proper bund and drainage maintenance using family/community labor", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 10, name: "Live fencing (bamboo, thorn bushes) to prevent animals from entering fields", category: "Damage protection", weight: 0.13, season: "Before Season" },
-  { id: 11, name: "Use free govt. apps for prices and weather (Kisan Suvidha, mKisan)", category: "Damage protection", weight: 0.13, season: "During Season" },
-  { id: 12, name: "Consult with KVK experts", category: "Crop health", weight: 0.2, season: "During Season" },
-  { id: 13, name: "Mulching (paddy straw mulch)", category: "Crop health", weight: 0.2, season: "Before Season" },
-  { id: 14, name: "Lease small extra plots of land seasonally", category: "farm area", weight: 0.05, season: "Before Season" },
-  { id: 15, name: "Convert fallow/waste land into cultivation (if available)", category: "farm area", weight: 0.05, season: "Before Season" },
-  { id: 16, name: "Tube well or small borewell", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 17, name: "field channels", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 18, name: "Rainwater harvesting tanks or ponds (low-cost models, often under MGNREGA or govt. subsidy)", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 19, name: "Solar/diesel pumps (shared among farmer groups)", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 20, name: "Simple drainage channels (community effort with small cost)", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 21, name: "Crop insurance", category: "Damage protection", weight: 0.13, season: "Before Season" },
-  { id: 22, name: "Buying improved/hybrid paddy seed", category: "Productivity", weight: 0.4, season: "Before Season" },
-  { id: 23, name: "Solar-powered irrigation pumps", category: "Irrigation", weight: 0.15, season: "Before Season" },
-  { id: 24, name: "paddy transplanters, combine harvesters, tractors", category: "Productivity", weight: 0.4, season: "After Harvest" }
+  { id: 1, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 2, name: "Balanced fertilizer use (small, need-based doses instead of excess)", category: "Productivity", weight: 0.4, season: "During Season" },
+  { id: 3, name: "IPM - Pheromone/sticky traps for pest control (low cost)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 4, name: "Apply organic manure (farmyard manure, cow dung, vermicompost, dhaincha green manure)", category: "Nutrition", weight: 0.07, season: "During Season" },
+  { id: 5, name: "Regular soil and water testing (often free at KVKs)", category: "Nutrition", weight: 0.07, season: "Before Season" },
+  { id: 6, name: "Proper bund and drainage maintenance using family/community labor", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 7, name: "Live fencing (bamboo, thorn bushes) to prevent animals from entering fields", category: "Damage protection", weight: 0.13, season: "Before Season" },
+  { id: 8, name: "Use free govt. apps for prices and weather (Kisan Suvidha, mKisan)", category: "Damage protection", weight: 0.13, season: "During Season" },
+  { id: 9, name: "Consult with KVK experts", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 10, name: "Lease small extra plots of land seasonally", category: "Farm Area", weight: 0.05, season: "Before Season" },
+  { id: 11, name: "Convert fallow/waste land into cultivation (if available)", category: "Farm Area", weight: 0.05, season: "Before Season" },
+  { id: 12, name: "Solar/diesel pumps (shared among farmer groups)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 13, name: "Simple drainage channels (community effort with small cost)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 14, name: "Buying improved/hybrid paddy seed", category: "Productivity", weight: 0.4, season: "Before Season" },
+  { id: 15, name: "paddy transplanters, combine harvesters, tractors", category: "Productivity", weight: 0.4, season: "After Harvest" }
+];
+
+// Agricultural practices for Treatment 2 with their weights, seasons, and categories
+const practicesTreatment2 = [
+  { id: 1, name: "Use pesticides/fungicides (only when needed, as per IPM advice)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 2, name: "Balanced fertilizer use (small, need-based doses instead of excess)", category: "Productivity", weight: 0.4, season: "During Season" },
+  { id: 3, name: "IPM - Pheromone/sticky traps for pest control (low cost)", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 4, name: "Apply organic manure (farmyard manure, cow dung, vermicompost, dhaincha green manure)", category: "Nutrition", weight: 0.07, season: "During Season" },
+  { id: 5, name: "Regular soil and water testing (often free at KVKs)", category: "Nutrition", weight: 0.07, season: "Before Season" },
+  { id: 6, name: "Proper bund and drainage maintenance using family/community labor", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 7, name: "Live fencing (bamboo, thorn bushes) to prevent animals from entering fields", category: "Damage protection", weight: 0.13, season: "Before Season" },
+  { id: 8, name: "Use free govt. apps for prices and weather (Kisan Suvidha, mKisan)", category: "Damage protection", weight: 0.13, season: "During Season" },
+  { id: 9, name: "Consult with KVK experts", category: "Crop health", weight: 0.2, season: "During Season" },
+  { id: 10, name: "Lease small extra plots of land seasonally", category: "Farm Area", weight: 0.05, season: "Before Season" },
+  { id: 11, name: "Convert fallow/waste land into cultivation (if available)", category: "Farm Area", weight: 0.05, season: "Before Season" },
+  { id: 12, name: "Solar/diesel pumps (shared among farmer groups)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 13, name: "Simple drainage channels (community effort with small cost)", category: "Irrigation", weight: 0.15, season: "Before Season" },
+  { id: 14, name: "Buying improved/hybrid paddy seed", category: "Productivity", weight: 0.4, season: "Before Season" },
+  { id: 15, name: "paddy transplanters, combine harvesters, tractors", category: "Productivity", weight: 0.4, season: "After Harvest" },
+  // Additional practices for Treatment 2
+  { id: 16, name: "Set aside part of your harvest income for loan repayment first", category: "Repayment behavior", weight: 0.1, season: "After Harvest" },
+  { id: 17, name: "Avoid taking multiple loans from different lenders at the same time", category: "Repayment behavior", weight: 0.1, season: "During Season" },
+  { id: 18, name: "Repay small amounts regularly instead of one large payment", category: "Repayment behavior", weight: 0.1, season: "During Season" }
 ];
 
 // Likelihood options with IDs
@@ -278,20 +292,13 @@ const ComparisonBarChart = ({ values, labels, title, noWeatherValues = null }) =
 };
 
 // Slideshow for Treatment 1 Info Page
-const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
+const InfoPath1 = ({ setScreen, setTreatmentFilter, setCurrentPractices, practices }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = [
     { image: '/T1_ENG.png', alt: 'Treatment 1 - Slide 1' },
     { image: '/T1_OD.png', alt: 'Treatment 1 - Slide 2' }
   ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-8">
@@ -353,6 +360,7 @@ const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
               onClick={() => {
                 setScreen('selection');
                 setTreatmentFilter(null);
+                setCurrentPractices(practices); // Reset practices when going back
               }}
               className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
             >
@@ -372,7 +380,7 @@ const InfoPath1 = ({ setScreen, setTreatmentFilter }) => {
 };
 
 // Slideshow for Treatment 2 Info Page
-const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
+const InfoPath2 = ({ setScreen, setTreatmentFilter, setCurrentPractices, practices }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
     
   // Replace these with your actual image URLs
@@ -386,14 +394,6 @@ const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
       alt: 'Treatment 2 - Slide 2'
     }
   ];
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000); // Change slide every 5 seconds
-    
-    return () => clearInterval(timer);
-  }, [slides.length]);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-8">
@@ -461,6 +461,7 @@ const InfoPath2 = ({ setScreen, setTreatmentFilter }) => {
             onClick={() => {
               setScreen('selection');
               setTreatmentFilter(null);
+              setCurrentPractices(practices);
             }}
             className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
           >
@@ -510,6 +511,7 @@ const App = () => {
   const [showFarmerList, setShowFarmerList] = useState(false);
   const [noWeatherKhetscore, setNoWeatherKhetscore] = useState(null);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
+  const [currentPractices, setCurrentPractices] = useState(practices);
 
   // Load CSV data
   useEffect(() => {
@@ -678,6 +680,7 @@ const App = () => {
     setFarmerID('');
     setNoWeatherKhetscore(null);
     setIsViewingExisting(false);
+    setCurrentPractices(practices);
     setScreen('dashboard');
     setError('');
   }
@@ -817,7 +820,7 @@ const App = () => {
     const seasonRecord = {
       season: currentSeason,
       seasonType: currentSeason % 2 === 1 ? 'Rabi' : 'Kharif',
-      practices: selectedPractices.map(id => practices.find(p => p.id === id).name),
+      practices: selectedPractices.map(id => currentPractices.find(p => p.id === id).name),
       practiceIds: selectedPractices,
       weatherShock: weatherShock ? weatherShock.name : 'None',
       endScore: currentFarmer.currentKhetscore,
@@ -1238,6 +1241,7 @@ const App = () => {
           <button
             onClick={() => {
               setTreatmentFilter('treat1');
+              setCurrentPractices(practices);
               setScreen('info-path1');
             }}
             className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
@@ -1253,6 +1257,7 @@ const App = () => {
           <button
             onClick={() => {
               setTreatmentFilter('treat2');
+              setCurrentPractices(practicesTreatment2);
               setScreen('info-path2');
             }}
             className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
@@ -1271,12 +1276,12 @@ const App = () => {
 
   // Info Page - Path 1 with Image Slideshow
   if (screen === 'info-path1') {
-    return <InfoPath1 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} />;
+    return <InfoPath1 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} setCurrentPractices={setCurrentPractices} practices={practices} />;
   }
 
   // Info Page - Path 2 with Image Slideshow
   if (screen === 'info-path2') {
-    return <InfoPath2 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} />;
+    return <InfoPath2 setScreen={setScreen} setTreatmentFilter={setTreatmentFilter} setCurrentPractices={setCurrentPractices} practices={practices} />;
   }
 
   // Info Page - Simulation
@@ -1339,7 +1344,7 @@ const App = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
         <nav className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-8 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 ">
             <div className="flex justify-between items-center">
               <button 
                 onClick={handleLogoClick}
@@ -1348,31 +1353,33 @@ const App = () => {
                 <Leaf className="w-8 h-8 text-green-700" />
                 <h1 className="text-2xl font-bold text-green-800">KhetScore</h1>
               </button>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Welcome,</p>
-                  <p className="font-semibold text-gray-800">{currentUser.name}</p>
+              <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs sm:text-sm text-gray-600">Welcome,</p>
+                  <p className="text-sm sm:text-base font-semibold text-gray-800">{currentUser.name}</p>
                 </div>
-                <LanguageToggle language={language} setLanguage={setLanguage} />
+                <div className="hidden sm:block">
+                  <LanguageToggle language={language} setLanguage={setLanguage} />
+                </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+                  className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-red-600 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span>Logout</span>
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base">Logout</span>
                 </button>
               </div>
             </div>
           </div>
         </nav>
 
-        <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
             <p className="text-gray-600">Manage your agricultural simulation activities</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Total Simulations (filtered by treatment) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
@@ -1452,8 +1459,8 @@ const App = () => {
               ) : (
                 <div className="space-y-3">
                   {filteredSimulations.slice(-10).reverse().map((sim) => (
-                    <div key={sim.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex justify-between items-start">
+                    <div key={sim.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
                         <div>
                           <p className="font-semibold text-gray-800">{sim.farmer.name}</p>
                           <p className="text-sm text-gray-600">ID: {sim.farmer.id}</p>
@@ -1472,10 +1479,10 @@ const App = () => {
                               {sim.farmer.initialKhetscore} → {sim.farmer.finalKhetscore}
                             </p>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => handleViewSummary(sim)}
-                              className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors"
+                              className="flex items-center gap-1 bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="View Summary"
                             >
                               <Eye className="w-4 h-4" />
@@ -1483,7 +1490,7 @@ const App = () => {
                             </button>
                             <button
                               onClick={() => handleExportCSV(sim)}
-                              className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+                              className="flex items-center gap-1 bg-green-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="Export to CSV"
                             >
                               <Download className="w-4 h-4" />
@@ -1491,7 +1498,7 @@ const App = () => {
                             </button>
                             <button
                               onClick={() => confirmDelete(sim)}
-                              className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+                              className="flex items-center gap-1 bg-red-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
                               title="Delete Simulation"
                             >
                               <AlertCircle className="w-4 h-4" />
@@ -1762,8 +1769,8 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-3xl mx-auto p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">Season {currentSeason} - {seasonType} Season</h2>
               <p className="text-gray-600 mb-4">Farmer: {currentFarmer.Name}</p>
@@ -1789,8 +1796,8 @@ const App = () => {
 
   // Practice Selection Screen with Integrated Likelihood
   if (screen === 'practice-selection') {
-    // Group practices by category
-    const groupedPractices = practices.reduce((acc, practice) => {
+    // Group practices by category using currentPractices
+    const groupedPractices = currentPractices.reduce((acc, practice) => {
       if (!acc[practice.category]) acc[practice.category] = [];
       acc[practice.category].push(practice);
       return acc;
@@ -1828,7 +1835,7 @@ const App = () => {
       
       // Calculate score - only practices with "Probably will do it" (3) or "Definitely will do it" (4) contribute
       const practiceBonus = practiceIds.reduce((sum, id) => {
-        const practice = practices.find(p => p.id === id);
+        const practice = currentPractices.find(p => p.id === id);
         const likelihoodId = practicesWithLikelihood[id].likelihoodId;
         
         // Only add weight if likelihood is 3 or 4
@@ -1893,8 +1900,8 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-6xl mx-auto p-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-green-800 mb-2">Select Agricultural Practices</h2>
               <p className="text-gray-600">Season {currentSeason} - Choose at least 1 practice and rate likelihood</p>
@@ -2076,7 +2083,7 @@ const App = () => {
           </div>
         </nav>
 
-        <div className="max-w-3xl mx-auto p-8">
+        <div className="max-w-5xl mx-auto p-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-green-800 mb-6">Season {currentSeason} {seasonType} Results</h2>
@@ -2110,7 +2117,7 @@ const App = () => {
                 <p className="font-medium text-gray-700 mb-2">Selected Practices ({selectedPractices.length}):</p>
                 <ul className="text-sm text-gray-600 space-y-1">
                   {selectedPractices.map(id => (
-                    <li key={id}>• {practices.find(p => p.id === id).name}</li>
+                    <li key={id}>• {currentPractices.find(p => p.id === id)?.name || 'Practice not found'}</li>
                   ))}
                 </ul>
               </div>
@@ -2399,9 +2406,9 @@ const App = () => {
             <div className="mb-8 bg-gray-50 p-6 rounded-lg">
               <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Initial Khetscore</h3>
               <VerticalBarChart 
-                values={[scores[0]]}
-                labels={['Start']}
-                showInitialOnly={true}
+                values={[scores[0], scores[3]]}
+                labels={['Start', 'Final']}
+                showInitialOnly={false}
               />
             </div>
 
