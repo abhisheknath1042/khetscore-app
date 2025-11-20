@@ -573,7 +573,14 @@ const App = () => {
             .single();
           
           if (!error && data) {
-            setCurrentUser(data);
+            const userWithoutPassword = {
+              id: data.id,
+              username: data.username,
+              full_name: data.full_name,
+              organization: data.organization,
+              created_at: data.created_at
+            };
+            setCurrentUser(userWithoutPassword);
             setIsLoggedIn(true);
             setAuthScreen('');
             await loadUserData(data.id);
@@ -1346,9 +1353,6 @@ const App = () => {
     );
   }
 
-  // Dashboard (after login)
-  if (!isLoggedIn) return null;
-
   // Show loading screen while checking auth
   if (authLoading) {
     return (
@@ -1362,6 +1366,10 @@ const App = () => {
       </div>
     );
   }
+
+  // If not logged in and not on auth screens, return null
+  // (Auth screens are handled above with authScreen checks)
+  if (!isLoggedIn && !authScreen) return null;
 
   // Selection Screen (First Page)
   if (screen === 'selection') {
