@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home, BookOpen } from 'lucide-react';
 import Papa from 'papaparse';
+import { supabase } from './supabaseClient';
 
 // Agricultural practices for Treatment 1 with their weights, seasons, and categories
 const practices = [
@@ -512,6 +513,7 @@ const App = () => {
   const [noWeatherKhetscore, setNoWeatherKhetscore] = useState(null);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
   const [currentPractices, setCurrentPractices] = useState(practices);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Load CSV data
   useEffect(() => {
@@ -525,12 +527,12 @@ const App = () => {
         return response.text();
       })
       .then(csvText => {
-        console.log('CSV Text loaded:', csvText); // Debug log
+        console.log('CSV Text loaded:', csvText);
         Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
           complete: (results) => {
-            console.log('Parsed data:', results.data); // Debug log
+            console.log('Parsed data:', results.data);
             if (results.data && results.data.length > 0) {
               setFarmersData(results.data);
               setCsvLoading(false);
@@ -549,27 +551,49 @@ const App = () => {
       })
       .catch(error => {
         console.error('Error loading CSV file:', error);
-        setCsvError('Failed to load farmer data. Please ensure farmerdata_prefill.csv is in the public folder.');
+        setCsvError('Failed to load farmer data.');
         setCsvLoading(false);
       });
 
+    // Check for existing session in localStorage
     const checkAuth = async () => {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-        setAuthScreen('');
-        await loadUserData(user.username);
+      try {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          
+          // Verify user still exists in database
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && data) {
+            setCurrentUser(data);
+            setIsLoggedIn(true);
+            setAuthScreen('');
+            await loadUserData(data.id);
+          } else {
+            // User no longer exists, clear localStorage
+            localStorage.removeItem('currentUser');
+          }
+        }
+        setAuthLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setAuthLoading(false);
       }
     };
+
     checkAuth();
   }, []);
 
   // Load user data
-  const loadUserData = async (username) => {
+  const loadUserData = async (userId) => {
     try {
-      const savedSims = localStorage.getItem(`simulations_${username}`);
+      // Load simulations from localStorage
+      const savedSims = localStorage.getItem(`simulations_${userId}`);
       if (savedSims) {
         setAllSimulations(JSON.parse(savedSims));
       }
@@ -588,7 +612,7 @@ const App = () => {
       };
       const updatedSims = [...allSimulations, newSim];
       setAllSimulations(updatedSims);
-      localStorage.setItem(`simulations_${currentUser.username}`, JSON.stringify(updatedSims));
+      localStorage.setItem(`simulations_${currentUser.id}`, JSON.stringify(updatedSims));
     } catch (error) {
       console.error('Error saving simulation:', error);
     }
@@ -609,7 +633,7 @@ const App = () => {
   const handleDeleteSimulation = (simId) => {
     const updatedSims = allSimulations.filter(sim => sim.id !== simId);
     setAllSimulations(updatedSims);
-    localStorage.setItem(`simulations_${currentUser.username}`, JSON.stringify(updatedSims));
+    localStorage.setItem(`simulations_${currentUser.id}`, JSON.stringify(updatedSims));
     setShowDeleteConfirm(false);
     setSimulationToDelete(null);
   };
@@ -700,77 +724,113 @@ const App = () => {
     setError('');
   };
 
-  // Handle login
+  // Handle login with custom authentication
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthLoading(true);
     
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.username === loginForm.username && u.password === loginForm.password);
+      // Query database for user with matching username and password
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', loginForm.username)
+        .eq('password', loginForm.password)
+        .single();
       
-      if (user) {
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        setAuthScreen(null);
-        setScreen('selection');
-        await loadUserData(user.username);
-      } else {
+      if (error || !data) {
         setAuthError('Invalid username or password');
+        setAuthLoading(false);
+        return;
       }
+      
+      // Login successful
+      setCurrentUser(data);
+      setIsLoggedIn(true);
+      localStorage.setItem('currentUser', JSON.stringify(data));
+      setAuthScreen(null);
+      setScreen('selection');
+      await loadUserData(data.id);
+      setAuthLoading(false);
     } catch (error) {
+      console.error('Login error:', error);
       setAuthError('Login failed. Please try again.');
+      setAuthLoading(false);
     }
   };
 
-  // Handle register
+  // Handle register with custom authentication
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError('');
+    setAuthLoading(true);
     
     if (!registerForm.username || !registerForm.password || !registerForm.name) {
       setAuthError('Please fill in all required fields');
+      setAuthLoading(false);
       return;
     }
     
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      if (users.find(u => u.username === registerForm.username)) {
+      // Check if username already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', registerForm.username)
+        .single();
+
+      if (existingUser) {
         setAuthError('Username already exists');
+        setAuthLoading(false);
         return;
       }
-      
-      const newUser = {
-        username: registerForm.username,
-        password: registerForm.password,
-        name: registerForm.name,
-        organization: registerForm.organization,
-        createdAt: new Date().toISOString()
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      
-      setCurrentUser(newUser);
+
+      // Insert new user
+      const { data, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            username: registerForm.username,
+            password: registerForm.password,
+            full_name: registerForm.name,
+            organization: registerForm.organization || ''
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Registration error:', error);
+        setAuthError('Registration failed. Please try again.');
+        setAuthLoading(false);
+        return;
+      }
+
+      // Registration successful - auto login
+      setCurrentUser(data);
       setIsLoggedIn(true);
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      setAuthScreen('login');
+      localStorage.setItem('currentUser', JSON.stringify(data));
+      setAuthScreen(null);
+      setScreen('selection');
+      setAuthLoading(false);
     } catch (error) {
+      console.error('Registration error:', error);
       setAuthError('Registration failed. Please try again.');
+      setAuthLoading(false);
     }
   };
 
   // Handle logout
   const handleLogout = () => {
-    // Clear draft on logout
+    // Clear local data
     if (currentUser) {
-      localStorage.removeItem(`draft_${currentUser.username}`);
+      localStorage.removeItem(`simulations_${currentUser.id}`);
     }
+    
+    localStorage.removeItem('currentUser');
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
     setAuthScreen('landing');
     setScreen('selection');
     setAllSimulations([]);
@@ -1088,9 +1148,10 @@ const App = () => {
             
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              disabled={authLoading}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Login
+              {authLoading ? 'Logging in...' : 'Login'}
             </button>
           </form>
           
@@ -1189,9 +1250,10 @@ const App = () => {
             
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              disabled={authLoading}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              Create Account
+              {authLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
           
@@ -1222,6 +1284,20 @@ const App = () => {
 
   // Dashboard (after login)
   if (!isLoggedIn) return null;
+
+  // Show loading screen while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block bg-white/10 backdrop-blur-sm p-6 rounded-full mb-6">
+            <Leaf className="w-20 h-20 text-white animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-bold text-white">Loading KhetScore...</h2>
+        </div>
+      </div>
+    );
+  }
 
   // Selection Screen (First Page)
   if (screen === 'selection') {
@@ -1356,7 +1432,7 @@ const App = () => {
               <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
                 <div className="text-right hidden sm:block">
                   <p className="text-xs sm:text-sm text-gray-600">Welcome,</p>
-                  <p className="text-sm sm:text-base font-semibold text-gray-800">{currentUser.name}</p>
+                  <p className="text-sm sm:text-base font-semibold text-gray-800">{currentUser.full_name}</p>
                 </div>
                 <div className="hidden sm:block">
                   <LanguageToggle language={language} setLanguage={setLanguage} />
