@@ -1,9 +1,10 @@
 // khetscore-app/src/App.js
 // import necessary libraries and components
 import React, { useState, useEffect } from 'react';
-import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, PlayCircle, Home, BookOpen } from 'lucide-react';
+import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, EyeOff, PlayCircle, Home, BookOpen } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from './supabaseClient';
+import bcrypt from 'bcryptjs';
 
 // Agricultural practices for Treatment 1 with their weights, seasons, and categories
 const practices = [
@@ -489,6 +490,8 @@ const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ username: '', password: '', name: '', organization: '' });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [screen, setScreen] = useState('selection'); 
   const [treatmentFilter, setTreatmentFilter] = useState(null); 
@@ -724,19 +727,18 @@ const App = () => {
     setError('');
   };
 
-  // Handle login with custom authentication
+  // Handle login with custom authentication (with password verification)
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
     setAuthLoading(true);
     
     try {
-      // Query database for user with matching username and password
+      // Get user by username only (we'll verify password separately)
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('username', loginForm.username)
-        .eq('password', loginForm.password)
         .single();
       
       if (error || !data) {
@@ -745,10 +747,27 @@ const App = () => {
         return;
       }
       
-      // Login successful
-      setCurrentUser(data);
+      // Compare entered password with hashed password in database
+      const isPasswordValid = await bcrypt.compare(loginForm.password, data.password);
+      
+      if (!isPasswordValid) {
+        setAuthError('Invalid username or password');
+        setAuthLoading(false);
+        return;
+      }
+      
+      // Login successful - remove password from user object
+      const userWithoutPassword = {
+        id: data.id,
+        username: data.username,
+        full_name: data.full_name,
+        organization: data.organization,
+        created_at: data.created_at
+      };
+
+      setCurrentUser(userWithoutPassword);
       setIsLoggedIn(true);
-      localStorage.setItem('currentUser', JSON.stringify(data));
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       setAuthScreen(null);
       setScreen('selection');
       await loadUserData(data.id);
@@ -760,7 +779,7 @@ const App = () => {
     }
   };
 
-  // Handle register with custom authentication
+  // Handle register with custom authentication (with password hashing)
   const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -768,6 +787,13 @@ const App = () => {
     
     if (!registerForm.username || !registerForm.password || !registerForm.name) {
       setAuthError('Please fill in all required fields');
+      setAuthLoading(false);
+      return;
+    }
+
+    // Password validation (optional but recommended)
+    if (registerForm.password.length < 6) {
+      setAuthError('Password must be at least 6 characters');
       setAuthLoading(false);
       return;
     }
@@ -786,13 +812,16 @@ const App = () => {
         return;
       }
 
-      // Insert new user
+      // Hash the password before storing
+      const hashedPassword = await bcrypt.hash(registerForm.password, 10);
+
+      // Insert new user with hashed password
       const { data, error } = await supabase
         .from('users')
         .insert([
           {
             username: registerForm.username,
-            password: registerForm.password,
+            password: hashedPassword,
             full_name: registerForm.name,
             organization: registerForm.organization || ''
           }
@@ -808,9 +837,18 @@ const App = () => {
       }
 
       // Registration successful - auto login
-      setCurrentUser(data);
+      // Remove password from user object before storing in state
+      const userWithoutPassword = {
+        id: data.id,
+        username: data.username,
+        full_name: data.full_name,
+        organization: data.organization,
+        created_at: data.created_at
+      };
+
+      setCurrentUser(userWithoutPassword);
       setIsLoggedIn(true);
-      localStorage.setItem('currentUser', JSON.stringify(data));
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       setAuthScreen(null);
       setScreen('selection');
       setAuthLoading(false);
@@ -1129,14 +1167,27 @@ const App = () => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <input
-                type="password"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? "text" : "password"}
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showLoginPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
             
             {authError && (
@@ -1167,7 +1218,7 @@ const App = () => {
             </button>
             <button
               onClick={() => {
-                setAuthScreen('login');
+                setAuthScreen('landing');
                 setAuthError('');
               }}
               className="block w-full mt-4 text-gray-600 hover:text-gray-700"
@@ -1231,14 +1282,27 @@ const App = () => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-              <input
-                type="password"
-                value={registerForm.password}
-                onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Create a password"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showRegisterPassword ? "text" : "password"}
+                  value={registerForm.password}
+                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Create a password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showRegisterPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
             
             {authError && (
