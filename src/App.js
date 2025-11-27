@@ -191,11 +191,11 @@ const translations = {
     close: "ବନ୍ଦ କରନ୍ତୁ",
     
     // Season Intro
-    season: "ମୌସମ",
-    rabiSeason: "ରବି ମୌସମ",
-    kharifSeason: "ଖରିଫ ମୌସମ",
+    season: "ଋତୁ",
+    rabiSeason: "ରବି ଋତୁ ",
+    kharifSeason: "ଖରିଫ ଋତୁ ",
     farmer: "କୃଷକ",
-    khetscoreProgress: "ମୌସମ ପୂର୍ବରୁ ଖେତସ୍କୋର ପ୍ରଗତି",
+    khetscoreProgress: "ଏହି ଋତୁରେ ଚାଷ ଆରମ୍ଭ ଆଗରୁ ଖେତସ୍କୋର",
     selectAgriPractices: "କୃଷି ପ୍ରଥାମାନେ ଚୟନ କରନ୍ତୁ",
     initial: "ଆରମ୍ଭିକ",
     
@@ -211,12 +211,12 @@ const translations = {
     // Weather Result
     results: "ପରିଣାମ",
     weatherShock: "ମୌସମ ଝଟକା",
-    noWeatherShock: "କୌଣସି ମୌସମ ଝଟକା ନାହିଁ",
-    favorableConditions: "ଏହି ମୌସମରେ ଉପକୃତ ମୌସମ ପରିସ୍ଥିତି",
+    noWeatherShock: "ଚାଷ କୁ କ୍ଷତି କଲା ଭଳି କିଛି ବି ବିପର୍ଯୟ ଏହି ଋତୁରେ ହୋଇନାହିଁ",
+    favorableConditions: "ଏହି ଋତୁ ଟି ଚାଷ କାମ ପାଇଁ ଅନୁକୂଳ ଥିଲା",
     farmAffected: "ଆପଣଙ୍କର କ୍ଷେତ ପ୍ରଭାବିତ ହୋଇଛି",
     selectedPracticesLabel: "ଚୟନିତ ପ୍ରଥାମାନେ",
     continueSimulation: "ସିମୁଲେସନ୍ ଜାରି ରଖନ୍ତୁ",
-    khetscoreComparison: "ଖେତସ୍କୋର ତୁଳନା",
+    khetscoreComparison: "ଖେତସ୍କୋର ର ତୁଳନା",
     
     // Summary
     simulationComplete: "ସିମୁଲେସନ୍ ସମ୍ପୂର୍ଣ୍ଣ!",
@@ -232,11 +232,11 @@ const translations = {
     exportCSV: "CSV ରେ ନିର୍ୟାତ କରନ୍ତୁ",
     saveReturn: "ସଞ୍ଚୟ କରନ୍ତୁ ଏବଂ ଡ୍ୟାଶବୋର୍ଡକୁ ଫେରନ୍ତୁ",
     uploadToDrive: "ଡ୍ରାଇଭ୍‌କୁ ଅପଲୋଡ୍ କରନ୍ତୁ",
-    noWeatherScore: "ମୌସମ ବିନା ସ୍କୋର",
+    noWeatherScore: "ବିନା କ୍ଷୟକ୍ଷତି ରେ",
     
     // Common
     home: "ହୋମ୍",
-    back: "ବାକ୍ସ",
+    back: "ବ୍ୟାକ",
 
     // Likelihood options
     definitelyWont: "ନିଶ୍ଚିତ ଭାବରେ ଏହା କରିବ ନାହିଁ",
@@ -322,7 +322,7 @@ const comprehensionQuestionsTreatment1 = {
     },
     {
       id: 3,
-      question: "ଯେତେବେଳେ ଆପଣ ଆପଣଙ୍କ ଜମିରୁ ଖାଲି ନ ରଖି ନିୟମିତ ଭାବରେ ଫସଲ ଚାଷ କରନ୍ତି, ଯେତେବେଳେ ଆପଣଙ୍କର ଉତ୍ପାଦନକତା ସ୍କୋରରେ କ'ଣ ହୁଏ?",
+      question: "ଯେତେବେଳେ ଆପଣ ଆପଣଙ୍କ ଜମିରୁ ଖାଲି ନ ରଖି ନିୟମିତ ଭାବରେ ଫସଲ ଚାଷ କରନ୍ତି, ସେତେବେଳେ ଆପଣଙ୍କର ଉତ୍ପାଦନକତା ସ୍କୋରରେ କ'ଣ ହୁଏ?",
       options: ["ସ୍କୋର ବଢ଼ିଯାଏ", "ସ୍କୋର କମିଯାଏ", "ସ୍କୋର ସମାନ ରହିଥାଏ"]
     },
     {
@@ -360,11 +360,6 @@ const comprehensionQuestionsTreatment2 = {
       id: 5,
       question: "What happens to your productivity score when you regularly grow crops on your land without leaving it empty?",
       options: ["The score goes up", "The score goes down", "The score stays the same"]
-    },
-    {
-      id: 6,
-      question: "ଯେତେବେଳେ ଆପଣ ଆପଣଙ୍କ ଜମିରୁ ଖାଲି ନ ରଖି ନିୟମିତ ଭାବରେ ଫସଲ ଚାଷ କରନ୍ତି, ଯେତେବେଳେ ଆପଣଙ୍କର ଉତ୍ପାଦନକତା ସ୍କୋରରେ କ'ଣ ହୁଏ?",
-      options: ["ସ୍କୋର ବଢ଼ିଯାଏ", "ସ୍କୋର କମିଯାଏ", "ସ୍କୋର ସମାନ ରହିଥାଏ"]
     }
   ],
   hindi: [
@@ -390,11 +385,6 @@ const comprehensionQuestionsTreatment2 = {
     },
     {
       id: 5,
-      question: "ଯେତେବେଳେ ଆପଣ ଆପଣଙ୍କ ଜମିରୁ ଖାଲି ନ ରଖି ନିୟମିତ ଭାବରେ ଫସଲ ଚାଷ କରନ୍ତି, ଯେତେବେଳେ ଆପଣଙ୍କର ଉତ୍ପାଦନକତା ସ୍କୋରରେ କ'ଣ ହୁଏ?",
-      options: ["ସ୍କୋର ବଢ଼ିଯାଏ", "ସ୍କୋର କମିଯାଏ", "ସ୍କୋର ସମାନ ରହିଥାଏ"]
-    },
-    {
-      id: 6,
       question: "ଯେତେବେଳେ ଆପଣ ଆପଣଙ୍କ ଜମିରୁ ଖାଲି ନ ରଖି ନିୟମିତ ଭାବରେ ଫସଲ ଚାଷ କରନ୍ତି, ଯେତେବେଳେ ଆପଣଙ୍କର ଉତ୍ପାଦନକତା ସ୍କୋରରେ କ'ଣ ହୁଏ?",
       options: ["ସ୍କୋର ବଢ଼ିଯାଏ", "ସ୍କୋର କମିଯାଏ", "ସ୍କୋର ସମାନ ରହିଥାଏ"]
     }
@@ -554,23 +544,12 @@ const UploadStatusModal = ({ status, onClose, language }) => {
         </div>
         
         <p className="text-gray-600 mb-4">{status.message}</p>
-        
-        {status.link && (
-          <a 
-            href={status.link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="block w-full bg-blue-600 text-white py-2 px-4 rounded-lg text-center mb-4 hover:bg-blue-700 transition-colors"
-          >
-            {language === 'hindi' ? 'Google Drive में खोलें' : 'Open in Google Drive'}
-          </a>
-        )}
-        
+            
         <button
           onClick={onClose}
           className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
         >
-          {language === 'hindi' ? 'बंद करें' : 'Close'}
+          {language === 'hindi' ? 'ବନ୍ଦ କରନ୍ତୁ' : 'Close'}
         </button>
       </div>
     </div>
@@ -613,6 +592,7 @@ const App = () => {
   const [currentPractices, setCurrentPractices] = useState(practices);
   const [authLoading, setAuthLoading] = useState(true);
   const [googleApiLoaded, setGoogleApiLoaded] = useState(false);
+   // eslint-disable-next-line
   const [uploadingToDrive, setUploadingToDrive] = useState(false);
   const [driveUploadStatus, setDriveUploadStatus] = useState(null); // { success: boolean, message: string, link?: string }
   const [comprehensionAnswers, setComprehensionAnswers] = useState({});
@@ -1171,7 +1151,6 @@ const App = () => {
         ? sim.comprehensionAnswers[q.id] 
         : comprehensionAnswers[q.id];
       comprehensionData[`ComprehensionQ${index + 1}`] = answer || 'Not answered';
-      comprehensionData[`ComprehensionQ${index + 1}_Question`] = q.question;
     });
 
     const csvData = [{
@@ -1261,13 +1240,12 @@ const App = () => {
     const questions = (sim.treatment || treatmentFilter) === 'treat2' 
       ? comprehensionQuestionsTreatment2.english
       : comprehensionQuestionsTreatment1.english;
-    
+
     questions.forEach((q, index) => {
       const answer = sim.comprehensionAnswers 
         ? sim.comprehensionAnswers[q.id] 
         : comprehensionAnswers[q.id];
       comprehensionData[`ComprehensionQ${index + 1}`] = answer || 'Not answered';
-      comprehensionData[`ComprehensionQ${index + 1}_Question`] = q.question;
     });
 
     // Generate CSV content (same as export)
@@ -1566,7 +1544,7 @@ const App = () => {
             <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
               <Users className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold mb-2">Treatment Group 1</h1>
+            <h1 className="text-4xl font-bold mb-2">Treatment Group 2</h1>
             <p className="text-green-100 text-lg">Information</p>
           </div>
           
@@ -2151,16 +2129,7 @@ const App = () => {
                             >
                               <Download className="w-4 h-4" />
                               {t('export')}
-                            </button>
-                            <button
-                              onClick={() => handleUploadToDrive(sim)}
-                              // disabled={uploadingToDrive || !googleApiLoaded}
-                              className="flex items-center gap-1 bg-purple-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                              title="Upload to Google Drive"
-                            >
-                              <Upload className="w-4 h-4" />
-                              {uploadingToDrive ? '...' : t('uploadToDrive')}
-                            </button>
+                            </button>                            
                             <button
                               onClick={() => confirmDelete(sim)}
                               className="flex items-center gap-1 bg-red-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
@@ -2758,6 +2727,16 @@ const App = () => {
         }
       }));
       
+      console.log('Calculation Details:', {
+        practiceBonus,
+        shockImpact,
+        currentScore: currentFarmer.currentKhetscore,
+        newScore: roundScore(newScore),
+        currentNoWeatherBase,
+        newNoWeatherScore: roundScore(newNoWeatherScore),
+        weatherShock: shock ? shock.name : 'None'
+      });
+      
       setScreen('weather-result');
     };
 
@@ -3100,12 +3079,13 @@ const App = () => {
       );
     };
 
-    const VerticalBarChartCombined = ({ values, noWeatherValues, labels }) => {
+    const VerticalBarChartCombined = ({ values, noWeatherValues, labels}) => {
       const maxScore = 100;
 
       return (
         <div className="relative">
-          <div className="flex items-end justify-center gap-3 sm:gap-4 h-64">
+          {/* Tighter gap between bars */}
+          <div className="flex items-end justify-center gap-[1px] sm:gap-[2px] h-64">
             {values.map((value, idx) => {
               const prevValue = idx > 0 ? values[idx - 1] : value;
               const isStart = idx === 0;
@@ -3120,52 +3100,67 @@ const App = () => {
 
               return (
                 <div key={idx} className="flex flex-col items-center">
-                  <div className="text-xs sm:text-sm font-semibold mb-2" style={{ color: barColor }}>
+                  {/* Value label */}
+                  <div
+                    className="text-xs sm:text-sm font-semibold mb-1"
+                    style={{ color: barColor }}
+                  >
                     {value}
                   </div>
+
+                  {/* Main bar - slightly thinner */}
                   <div
-                    className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+                    className="w-8 sm:w-10 rounded-t-lg transition-all duration-500"
                     style={{
                       height: `${heightPercentage * 2}px`,
                       backgroundColor: barColor,
                       minHeight: "20px",
                     }}
                   />
+
                   {/* Base line */}
-                  <div className="w-full mt-2">
-                    <div className="w-10 sm:w-12 h-1 bg-gray-300 mx-auto"></div>
+                  <div className="w-full mt-1">
+                    <div className="w-8 sm:w-10 h-1 bg-gray-300 mx-auto" />
                   </div>
 
-                  {/* Season label */}
-                  <div className="text-xs text-gray-700 mt-4 text-center w-20 sm:w-24">
+                  {/* Season label - narrower width so bars can sit closer */}
+                  <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20">
                     {labels[idx]}
                   </div>
                 </div>
               );
             })}
-            
+
             {/* Single NoWeather bar at the end */}
             {noWeatherValues && (
-              <div className="flex flex-col items-center border-l-2 border-gray-300 pl-3 sm:pl-4 ml-3 sm:ml-4">
-                <div className="text-xs sm:text-sm font-semibold mb-2 text-orange-600">
+              <div className="flex flex-col items-center justify-end border-l border-gray-300 pl-2 sm:pl-2 ml-0 sm:ml-1">
+                {/* NoWeather value */}
+                <div className="text-xs sm:text-sm font-semibold mb-1 text-orange-600">
                   {noWeatherValues[noWeatherValues.length - 1]}
                 </div>
+
+                {/* NoWeather bar - same width as others */}
                 <div
-                  className="w-10 sm:w-12 rounded-t-lg transition-all duration-500"
+                  className="w-8 sm:w-10 rounded-t-lg transition-all duration-500"
                   style={{
-                    height: `${(noWeatherValues[noWeatherValues.length - 1] / maxScore) * 2 * 100}px`,
+                    height: `${
+                      (noWeatherValues[noWeatherValues.length - 1] / maxScore) *
+                      2 *
+                      100
+                    }px`,
                     backgroundColor: "#f97316",
                     minHeight: "20px",
                   }}
                 />
+
                 {/* Base line */}
-                <div className="w-full mt-2">
-                  <div className="w-10 sm:w-12 h-1 bg-gray-300 mx-auto"></div>
+                <div className="w-full mt-1">
+                  <div className="w-8 sm:w-10 h-1 bg-gray-300 mx-auto" />
                 </div>
 
                 {/* Label */}
-                <div className="text-xs text-gray-700 mt-4 text-center w-20 sm:w-24">
-                  {t('noWeatherScore')}
+                <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20">
+                  {t("noWeatherScore")}
                 </div>
               </div>
             )}
