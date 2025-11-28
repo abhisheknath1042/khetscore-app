@@ -224,15 +224,15 @@ const translations = {
     start: "ଆରମ୍ଭ",
     final: "ଅନ୍ତିମ",
     seasonDetails: "ମୌସମ ବିବରଣୀ",
-    weather: "ମୌସମ",
-    withWeather: "ମୌସମ ସହିତ",
-    noWeather: "ବିନା ମୌସମ",
+    weather: "ଋତୁ",
+    withWeather: "ଋତୁ ସହିତ",
+    noWeather: "ବିନା ଋତୁ",
     practicesSelected: "ଚୟନିତ ପ୍ରଥାମାନେ",
     scoreProgression: "ସ୍କୋର ପ୍ରଗତି",
     exportCSV: "CSV ରେ ନିର୍ୟାତ କରନ୍ତୁ",
     saveReturn: "ସଞ୍ଚୟ କରନ୍ତୁ ଏବଂ ଡ୍ୟାଶବୋର୍ଡକୁ ଫେରନ୍ତୁ",
     uploadToDrive: "ଡ୍ରାଇଭ୍‌କୁ ଅପଲୋଡ୍ କରନ୍ତୁ",
-    noWeatherScore: "ବିନା କ୍ଷୟକ୍ଷତି ରେ",
+    noWeatherScore: "ବିନା କ୍ଷୟକ୍ଷତି ଖେତସ୍କୋର",
     
     // Common
     home: "ହୋମ୍",
@@ -427,6 +427,61 @@ const useTranslation = (language) => {
   return { t };
 };
 
+const TRANSLATION_MAPS = {
+  likelihood: {
+    // Hindi to English
+    "ନିଶ୍ଚିତ ଭାବରେ ଏହା କରିବ ନାହିଁ": "Definitely won't do it",
+    "ହୁଏତ ଏହା କରିବ ନାହିଁ": "Probably won't do it",
+    "ବୋଧହୁଏ ଏହା କରିବି": "Probably will do it",
+    "ନିଶ୍ଚିତ ଭାବରେ ଏହା କରିବି": "Definitely will do it",
+  },
+  
+  weather: {
+    // Hindi to English
+    "ବନ୍ୟା": "Flood",
+    "ପ୍ରବଳ ବର୍ଷା": "Heavy Rain",
+    "କୀଟପତଙ୍ଗ ଏବଂ ରୋଗ": "Pest and Disease",
+    "None": "None"
+  },
+  
+  comprehension: {
+    // Treatment 1 & 2 - Question 1
+    "ଉତ୍ପାଦନକତା": "Productivity",
+    "ଫସଲ ସ୍ୱାସ୍ଥ୍ୟ": "Crop health",
+    "ଜଳସେଚନ": "Irrigation",
+    "ପୁଷ୍ଟିକର": "Nutrition",
+    
+    // Treatment 1 & 2 - Question 2
+    "ଫସଲ ସ୍ୱାସ୍ଥ୍ୟ ଭଲ ଅଛି": "Crop health is good",
+    "ଫସଲ ସ୍ୱାସ୍ଥ୍ୟ ଖରାପ ଅଛି": "Crop health is poor",
+    "ଫସଲ ସ୍ୱାସ୍ଥ୍ୟ ସମାନ ରହିଥାଏ": "Crop health stays the same",
+    
+    // Treatment 1 & 2 - Question 3 & 5
+    "ସ୍କୋର ବଢ଼ିଯାଏ": "The score goes up",
+    "ସ୍କୋର କମିଯାଏ": "The score goes down",
+    "ସ୍କୋର ସମାନ ରହିଥାଏ": "The score stays the same",
+    
+    // Treatment 1 - Question 4
+    "ପତ୍ର ଖାଉଥିବା କୀଟପତଙ୍ଗ": "Insects eating leaves",
+    "ବନ୍ୟା, ଶିଳାବୃଷ୍ଟି, କିମ୍ବା ମେସିନ ଗଛ ଭାଙ୍ଗିବା": "Flooding, hail, or machines breaking plants",
+    "ଉଭୟ କ ଏବଂ ଖ": "Both a and b",
+    
+    // Treatment 2 - Question 4
+    "ଯେଉଁ ଚାଷୀ ସମୟରେ ପରିଶୋଧ କରିଛନ୍ତି": "The farmer who repaid on time",
+    "ଯେଉଁ ଚାଷୀ ବିଳମ୍ବରେ ପରିଶୋଧ କରିଛନ୍ତି": "The farmer who repaid late",
+    "ଉଭୟ ସମାନ ସମ୍ଭାବନା ଅଛନ୍ତି": "Both are equally likely",
+    "ଜାଣିନାହାଁନ୍ତି": "Don't know",
+  }
+};
+
+// Helper function to translate any text to English
+const translateToEnglish = (text, category) => {
+  if (!text) return text;
+  
+  // If already in English or not found in map, return as is
+  return TRANSLATION_MAPS[category]?.[text] || text;
+};
+
 // Language Toggle Component
 const LanguageToggle = ({ language, setLanguage }) => {
   return (
@@ -438,84 +493,6 @@ const LanguageToggle = ({ language, setLanguage }) => {
     </button>
   );
 }
-
-// // Comparison Bar Chart Component
-// const ComparisonBarChart = ({ values, labels, title, noWeatherValues = null }) => {
-//   const maxScore = 100;
-//   const { t } = useTranslation(language);
-
-//   return (
-//     <div className="bg-gray-50 p-6 rounded-lg mt-6">
-//       <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center">{title}</h4>
-//       <div className="flex items-end justify-center gap-4 sm:gap-6 h-64">
-//         {values.map((value, idx) => {
-//           const prevValue = idx > 0 ? values[idx - 1] : value;
-//           const isStart = idx === 0;
-//           const isIncrease = value >= prevValue && !isStart;
-//           const isDecrease = value < prevValue && !isStart;
-          
-//           let barColor = '#0d3385'; // Start color (blue)
-//           if (isIncrease) barColor = '#2a9e1c'; // Increase (green)
-//           if (isDecrease) barColor = '#a61212'; // Decrease (red)
-          
-//           const heightPercentage = (value / maxScore) * 100;
-          
-//           return (
-//             <div key={idx} className="flex flex-col items-center">
-//               <div className="text-sm sm:text-base font-bold mb-2" style={{ color: barColor }}>
-//                 {value}
-//               </div>
-//               <div 
-//                 className="w-12 sm:w-16 rounded-t-lg transition-all duration-500"
-//                 style={{ 
-//                   height: `${heightPercentage * 1.8}px`,
-//                   backgroundColor: barColor,
-//                   minHeight: '30px'
-//                 }}
-//               />
-//               {/* Base line */}
-//               <div className="w-full mt-2">
-//                 <div className="w-12 sm:w-16 h-1 bg-gray-300 mx-auto"></div>
-//               </div>
-              
-//               {/* Label */}
-//               <div className="text-xs text-gray-600 mt-4 text-center w-24 sm:w-32 font-medium">
-//                 {labels[idx]}
-//               </div>
-//             </div>
-//           );
-//         })}
-        
-//         {/* Single NoWeather bar at the end */}
-//         {noWeatherValues && (
-//           <div className="flex flex-col items-center border-l-2 border-gray-300 pl-4 sm:pl-6 ml-4 sm:ml-6">
-//             <div className="text-sm sm:text-base font-bold mb-2 text-orange-600">
-//               {noWeatherValues[noWeatherValues.length - 1]}
-//             </div>
-//             <div 
-//               className="w-12 sm:w-16 rounded-t-lg transition-all duration-500"
-//               style={{ 
-//                 height: `${(noWeatherValues[noWeatherValues.length - 1] / maxScore) * 1.8 * 100}px`,
-//                 backgroundColor: '#f97316',
-//                 minHeight: '30px'
-//               }}
-//             />
-//             {/* Base line */}
-//             <div className="w-full mt-2">
-//               <div className="w-12 sm:w-16 h-1 bg-gray-300 mx-auto"></div>
-//             </div>
-            
-//             {/* Label */}
-//             <div className="text-xs text-gray-600 mt-4 text-center w-24 sm:w-32 font-medium">
-//               No Weather Score
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
 
 // Upload Status Modal Component
 const UploadStatusModal = ({ status, onClose, language }) => {
@@ -787,6 +764,7 @@ const App = () => {
     setCurrentFarmer(null);
     setCurrentSeason(1);
     setSelectedPractices([]);
+    setPracticesWithLikelihood({});
     setWeatherShock(null);
     setSeasonData([]);
     setLikelihoodAnswers({});
@@ -1059,7 +1037,7 @@ const App = () => {
       practices: selectedPractices.map(id => currentPractices.find(p => p.id === id).name),
       practiceIds: selectedPractices,
       weatherShock: weatherShock ? weatherShock.name : 'None', // Current language name
-      weatherShockEnglish: weatherShockEnglish, // ADD THIS LINE - English name for translation
+      weatherShockEnglish: weatherShockEnglish,
       endScore: currentFarmer.currentKhetscore,
       noWeatherScore: noWeatherKhetscore,
       likelihood: { ...likelihoodAnswers }
@@ -1140,18 +1118,45 @@ const App = () => {
       treatment: treatmentFilter
     };
 
-    // Format comprehension answers for CSV
+    // Process comprehension answers
     const comprehensionData = {};
-    const questions = (sim.treatment || treatmentFilter) === 'treat2' 
+    const questions = sim.treatment === 'treat2' 
       ? comprehensionQuestionsTreatment2.english
       : comprehensionQuestionsTreatment1.english;
     
     questions.forEach((q, index) => {
-      const answer = sim.comprehensionAnswers 
-        ? sim.comprehensionAnswers[q.id] 
-        : comprehensionAnswers[q.id];
-      comprehensionData[`ComprehensionQ${index + 1}`] = answer || 'Not answered';
+      const answer = sim.comprehensionAnswers?.[q.id] || comprehensionAnswers[q.id];
+      comprehensionData[`ComprehensionQ${index + 1}`] = translateToEnglish(answer, 'comprehension') || 'Not answered';
     });
+
+    // Add empty column after Q4 for Treatment 1
+    if (sim.treatment === 'treat1') {
+      comprehensionData['ComprehensionQ5'] = '';
+    }
+
+    // Helper to format season data
+    const formatSeasonData = (seasonIndex) => {
+      const season = sim.seasons[seasonIndex];
+      if (!season) return { practices: '', likelihood: '', weather: '', endScore: '', noWeatherScore: '' };
+
+      return {
+        practices: season.practiceIds?.join('; ') || '',
+        likelihood: season.practiceIds && season.likelihood
+          ? season.practiceIds.map(id => {
+              const likelihood = season.likelihood[id];
+              const translatedLabel = translateToEnglish(likelihood?.label, 'likelihood');
+              return `${id}_${likelihood?.id || ''}_${translatedLabel}`;
+            }).join('; ')
+          : '',
+        weather: translateToEnglish(season.weatherShockEnglish || season.weatherShock, 'weather'),
+        endScore: season.endScore || '',
+        noWeatherScore: season.noWeatherScore || season.endScore || ''
+      };
+    };
+
+    const season1 = formatSeasonData(0);
+    const season2 = formatSeasonData(1);
+    const season3 = formatSeasonData(2);
 
     const csvData = [{
       Name: sim.farmer.name,
@@ -1159,44 +1164,28 @@ const App = () => {
       Treatment: sim.treatment || treatmentFilter,
       InitialKhetscore: sim.farmer.initialKhetscore,
       
-      // Add comprehension answers
       ...comprehensionData,
       
       // Season 1
-      Season1_Practices: sim.seasons[0]?.practiceIds ? sim.seasons[0].practiceIds.join('; ') : '',
-      Season1_Likelihood: sim.seasons[0]?.practiceIds && sim.seasons[0]?.likelihood 
-        ? sim.seasons[0].practiceIds.map(id => {
-            const likelihood = sim.seasons[0].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season1_WeatherShock: sim.seasons[0]?.weatherShock || '',
-      Season1_EndScore: sim.seasons[0]?.endScore || '',
-      Season1_NoWeatherScore: sim.seasons[0]?.noWeatherScore || sim.seasons[0]?.endScore || '',
+      Season1_Practices: season1.practices,
+      Season1_Likelihood: season1.likelihood,
+      Season1_WeatherShock: season1.weather,
+      Season1_EndScore: season1.endScore,
+      Season1_NoWeatherScore: season1.noWeatherScore,
       
       // Season 2
-      Season2_Practices: sim.seasons[1]?.practiceIds ? sim.seasons[1].practiceIds.join('; ') : '',
-      Season2_Likelihood: sim.seasons[1]?.practiceIds && sim.seasons[1]?.likelihood
-        ? sim.seasons[1].practiceIds.map(id => {
-            const likelihood = sim.seasons[1].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season2_WeatherShock: sim.seasons[1]?.weatherShock || '',
-      Season2_EndScore: sim.seasons[1]?.endScore || '',
-      Season2_NoWeatherScore: sim.seasons[1]?.noWeatherScore || sim.seasons[1]?.endScore || '',
+      Season2_Practices: season2.practices,
+      Season2_Likelihood: season2.likelihood,
+      Season2_WeatherShock: season2.weather,
+      Season2_EndScore: season2.endScore,
+      Season2_NoWeatherScore: season2.noWeatherScore,
       
       // Season 3
-      Season3_Practices: sim.seasons[2]?.practiceIds ? sim.seasons[2].practiceIds.join('; ') : '',
-      Season3_Likelihood: sim.seasons[2]?.practiceIds && sim.seasons[2]?.likelihood
-        ? sim.seasons[2].practiceIds.map(id => {
-            const likelihood = sim.seasons[2].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season3_WeatherShock: sim.seasons[2]?.weatherShock || '',
-      Season3_EndScore: sim.seasons[2]?.endScore || '',
-      Season3_NoWeatherScore: sim.seasons[2]?.noWeatherScore || sim.seasons[2]?.endScore || ''
+      Season3_Practices: season3.practices,
+      Season3_Likelihood: season3.likelihood,
+      Season3_WeatherShock: season3.weather,
+      Season3_EndScore: season3.endScore,
+      Season3_NoWeatherScore: season3.noWeatherScore
     }];
     
     const csv = Papa.unparse(csvData);
@@ -1355,6 +1344,47 @@ const App = () => {
     }
   };
 
+  // Helper to build “with/without damage” season labels
+  const getSeasonDamageLabel = (seasonIndex, { forceNoDamage = false } = {}) => {
+    const seasonNumber = seasonIndex + 1;
+    const isRabi = seasonNumber % 2 === 1;
+    const isOdia = language === 'hindi';
+
+    // Base season name
+    const base = isRabi
+      ? (isOdia ? 'ରବି' : 'Rabi')
+      : (isOdia ? 'ଖରିଫ' : 'Kharif');
+
+    // In English just show Rabi / Kharif
+    if (!isOdia) return base;
+
+    // Decide if this season actually had a weather shock
+    let hasShock = false;
+
+    if (!forceNoDamage) {
+      if (seasonIndex === currentSeason - 1 && weatherShock) {
+        // Current season: use the live weatherShock state
+        const name =
+          weatherShock.name ||
+          weatherShock.weather ||
+          weatherShock.label ||
+          weatherShock.type;
+        hasShock = !!name && name !== "None";
+      } else if (seasonData[seasonIndex]) {
+        // Previous seasons: look at stored data
+        const s = seasonData[seasonIndex];
+        const w =
+          s.weatherShockEnglish ||
+          s.weatherShock ||
+          s.weather;
+        hasShock = !!w && w !== "None";
+      }
+    }
+
+    const suffix = hasShock ? " କ୍ଷୟକ୍ଷତି ସହିତ" : " କ୍ଷୟକ୍ଷତି ବିନା";
+    return base + suffix;
+  };
+
   // Comparison Bar Chart Component
   const ComparisonBarChart = ({ values, labels, title, noWeatherValues = null }) => {
     const maxScore = 100;
@@ -1442,19 +1472,19 @@ const App = () => {
     ];
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-8">
-        <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-4 sm:p-8">
+        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="bg-green-600 text-white p-4 text-center">
-            <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
-              <Users className="w-10 h-10 text-white" />
+          <div className="bg-green-600 text-white py-8 px-2 text-center flex items-center gap-3 justify-center">
+            <div className="inline-block bg-white/20 p-1 rounded-full mb-1">
+              <Users className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold mb-2">Treatment Group 1</h1>
-            <p className="text-green-100 text-lg">Information</p>
+            <h1 className="text-2xl font-bold mb-1">Treatment Group 1</h1>
+            <p className="text-green-100 text-2xl">Information</p>
           </div>
 
           {/* Slideshow Container */}
-          <div className="relative bg-gray-900 h-96">
+          <div className="relative bg-gray-900 flex-1 min-h-0">
             {slides.map((slide, index) => (
               <div
                 key={index}
@@ -1462,7 +1492,7 @@ const App = () => {
                   index === currentSlide ? 'opacity-100' : 'opacity-0'
                 }`}
               >
-                <img src={slide.image} alt={slide.alt} className="w-full h-full object-cover" />
+                <img src={slide.image} alt={slide.alt} className="w-full h-full object-contain" />
               </div>
             ))}
 
@@ -1495,21 +1525,21 @@ const App = () => {
           </div>
 
           {/* Info and Buttons */}
-          <div className="p-8">
-            <div className="p-8 pt-0 flex gap-4 mt-12">
+          <div className="px-14 py-6">
+            <div className="px-12 pt-1 flex gap-4 mt-4">
               <button
                 onClick={() => {
                   setScreen('selection');
                   setTreatmentFilter(null);
                   setCurrentPractices(practices); // Reset practices when going back
                 }}
-                className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
+                className="flex-1 bg-gray-200 text-gray-700 px-4 py-4 rounded-lg font-medium text-base hover:bg-gray-300 transition-all"
               >
                 ← {t('backToSelection')}
               </button>
               <button
                 onClick={() => setScreen('comprehension-check')}
-                className="flex-1 bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl"
+                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-base hover:bg-green-700 transition-all shadow"
               >
                 {t('continue')} →
               </button>
@@ -1537,8 +1567,8 @@ const App = () => {
     ];
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-8">
-        <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-4 sm:p-8">
+        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           {/* Header */}
           <div className="bg-green-600 text-white p-3 text-center">
             <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
@@ -1549,8 +1579,7 @@ const App = () => {
           </div>
           
           {/* Slideshow Container */}
-          <div className="relative bg-gray-900 h-[30rem]">
-            {/* Slides */}
+          <div className="relative bg-gray-900 flex-1 min-h-0">
             {slides.map((slide, index) => (
               <div
                 key={index}
@@ -1558,11 +1587,7 @@ const App = () => {
                   index === currentSlide ? 'opacity-100' : 'opacity-0'
                 }`}
               >
-                <img
-                  src={slide.image}
-                  alt={slide.alt}
-                  className="w-full h-full object-cover"
-                />
+                <img src={slide.image} alt={slide.alt} className="w-full h-full object-contain" />
               </div>
             ))}
             
@@ -2218,7 +2243,7 @@ const App = () => {
               <div className="flex items-center gap-4">
                 <LanguageToggle language={language} setLanguage={setLanguage} />
                 <button
-                  onClick={handleHomeClick}
+                  onClick={handleLogoClick}
                   className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -2525,14 +2550,10 @@ const App = () => {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4 sm:p-8">
-        <div className="max-w-5xl w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-4 sm:p-8">
+        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
           {/* Header */}
-          <header className="bg-green-600 text-white p-4 sm:p-6 text-center relative">
-            {/* Language Toggle in top right */}
-            <div className="absolute top-4 right-4">
-              <LanguageToggle language={language} setLanguage={setLanguage} />
-            </div>
+          <header className="bg-green-600 text-white py-8 px-2 text-center flex items-center gap-3 justify-center">
             <div className="inline-block bg-white/20 p-2 rounded-full mb-3">
               <BookOpen className="w-10 h-10 text-white" aria-hidden="true" />
             </div>
@@ -2540,8 +2561,8 @@ const App = () => {
           </header>
 
           {/* Image / Content */}
-          <main className="relative bg-gray-900">
-            <div className="h-[24rem] sm:h-[30rem]">
+          <main className="relative bg-gray-900 flex-1 min-h-0">
+            <div className="h-[24rem] sm:h-[36Srem]">
               <img
                 src={simImage.src}
                 alt={simImage.alt}
@@ -2578,7 +2599,7 @@ const App = () => {
 
   // Season Introduction Screen
   if (screen === 'season-intro') {
-    const seasonType = currentSeason % 2 === 1 ? (language === 'hindi' ? 'रबी' : 'RABI') : (language === 'hindi' ? 'खरीफ' : 'KHARIF');
+    const seasonType = currentSeason % 2 === 1 ? (language === 'hindi' ? 'ରବି' : 'RABI') : (language === 'hindi' ? 'ଖରିଫ' : 'KHARIF');
     
     const getComparisonData = () => {
       const values = [currentFarmer.initialKhetscore];
@@ -2586,12 +2607,12 @@ const App = () => {
       
       if (currentSeason >= 2 && seasonData.length >= 1) {
         values.push(seasonData[0].endScore);
-        labels.push(`${t('season')} 1 ${language === 'hindi' ? 'रबी' : 'Rabi'}`);
+        labels.push(`${t('season')} 1 ${language === 'hindi' ? 'ରବି' : 'Rabi'}`);
       }
       
       if (currentSeason >= 3 && seasonData.length >= 2) {
         values.push(seasonData[1].endScore);
-        labels.push(`${t('season')} 2 ${language === 'hindi' ? 'खरीफ' : 'Kharif'}`);
+        labels.push(`${t('season')} 2 ${language === 'hindi' ? 'ଖରିଫ' : 'Kharif'}`);
       }
       
       return { values, labels };
@@ -2629,7 +2650,7 @@ const App = () => {
           <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-green-800 mb-2">
-                {t('season')} {currentSeason} - {seasonType} {language === 'hindi' ? 'मौसम' : 'Season'}
+                {t('season')} {currentSeason} - {seasonType} {language === 'hindi' ? 'ଋତୁ' : 'Season'}
               </h2>
               <p className="text-gray-600 mb-4">{t('farmer')}: {currentFarmer.Name}</p>
             </div>
@@ -2707,13 +2728,20 @@ const App = () => {
       setWeatherShock(shock);
       
       const shockImpact = shock ? shock.impact : 0;
-      const newScore = Math.max(0, Math.min(100, currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)));
       
+      // Calculate Khetscore WITH weather impact
+      const newScore = Math.max(0, Math.min(100, 
+        currentFarmer.currentKhetscore + practiceBonus - Math.abs(shockImpact * currentFarmer.currentKhetscore)
+      ));
+      
+      // Calculate noWeatherKhetscore WITHOUT weather impact
+      // Use the last season's noWeatherKhetscore as base (or initial if first season)
       const currentNoWeatherBase = noWeatherKhetscore !== null ? noWeatherKhetscore : currentFarmer.initialKhetscore;
       const newNoWeatherScore = Math.max(0, Math.min(100, currentNoWeatherBase + practiceBonus));
       
+      // Update both scores
       setCurrentFarmer(prev => ({ ...prev, currentKhetscore: roundScore(newScore) }));
-      setNoWeatherKhetscore(roundScore(newNoWeatherScore));
+      setNoWeatherKhetscore(roundScore(newNoWeatherScore)); // This persists across seasons
       
       const seasonKey = `season${currentSeason}`;
       setSessionHistory(prev => ({
@@ -2727,14 +2755,15 @@ const App = () => {
         }
       }));
       
-      console.log('Calculation Details:', {
+      console.log('Score Calculation:', {
+        season: currentSeason,
         practiceBonus,
+        weatherShock: shock ? shock.name : 'None',
         shockImpact,
-        currentScore: currentFarmer.currentKhetscore,
-        newScore: roundScore(newScore),
-        currentNoWeatherBase,
-        newNoWeatherScore: roundScore(newNoWeatherScore),
-        weatherShock: shock ? shock.name : 'None'
+        previousKhetscore: currentFarmer.currentKhetscore,
+        newKhetscore: roundScore(newScore),
+        previousNoWeatherScore: currentNoWeatherBase,
+        newNoWeatherScore: roundScore(newNoWeatherScore)
       });
       
       setScreen('weather-result');
@@ -2876,39 +2905,64 @@ const App = () => {
     const seasonType = currentSeason % 2 === 1 ? (language === 'hindi' ? 'ରବି' : 'Rabi') : (language === 'hindi' ? 'ଖରିଫ' : 'Kharif');
     const localizedPractices = getLocalizedPractices();
     
+    const seasonTypeOdiaGraph = getSeasonDamageLabel(currentSeason - 1, {language, seasonData, currentSeason, weatherShock,});
+
+    const getWeatherShockDisplayName = () => {
+      if (!weatherShock) return '';
+
+      // For English UI, just use whatever is stored
+      if (language !== 'hindi') return weatherShock.name;
+
+      // For Odia UI, map English names → Odia; if already Odia, just return it
+      const englishName = weatherShock.weatherShockEnglish || weatherShock.name;
+
+      const shockMap = {
+        'Flood': 'ବନ୍ୟା',
+        'Heavy Rain': 'ପ୍ରବଳ ବର୍ଷା',
+        'Pest and Disease': 'କୀଟପତଙ୍ଗ ଏବଂ ରୋଗ',
+      };
+
+      return shockMap[englishName] || englishName;
+    };
+
     const getResultComparisonData = () => {
       const values = [currentFarmer.initialKhetscore];
       const labels = [t('initial')];
-      
+
       for (let i = 0; i < currentSeason - 1; i++) {
         if (seasonData[i]) {
           values.push(seasonData[i].endScore);
-          const sType = (i + 1) % 2 === 1 ? (language === 'hindi' ? 'ରବି' : 'Rabi') : (language === 'hindi' ? 'ଖରିଫ' : 'Kharif');
+          const sType = getSeasonDamageLabel(i, {language, seasonData, currentSeason, weatherShock,});
           labels.push(`${t('season')} ${i + 1} ${sType}`);
         }
       }
-      
+
+      // Current season
       values.push(currentFarmer.currentKhetscore);
-      labels.push(`${t('season')} ${currentSeason} ${seasonType}`);
-      
+      labels.push(`${t('season')} ${currentSeason} ${seasonTypeOdiaGraph}`);
+
       return { values, labels };
     };
-    
+
     const getNoWeatherComparisonData = () => {
       const values = [currentFarmer.initialKhetscore];
       const labels = [t('initial')];
-      
+
+      // Previous seasons, but explicitly “without damage”
       for (let i = 0; i < currentSeason - 1; i++) {
         if (seasonData[i]) {
           values.push(seasonData[i].noWeatherScore);
-          const sType = (i + 1) % 2 === 1 ? (language === 'hindi' ? 'ରବି' : 'Rabi') : (language === 'hindi' ? 'ଖରିଫ' : 'Kharif');
+          const sType = getSeasonDamageLabel(i, {language, seasonData, currentSeason, weatherShock, forceNoDamage: true,});
           labels.push(`${t('season')} ${i + 1} ${sType}`);
         }
       }
-      
+
+      // Current season, always “without damage” for the no-weather run
       values.push(noWeatherKhetscore);
-      labels.push(`${t('season')} ${currentSeason} ${seasonType}`);
-      
+      labels.push(
+        `${t('season')} ${currentSeason} ${getSeasonDamageLabel(currentSeason - 1, {language, seasonData, currentSeason, weatherShock, forceNoDamage: true,})}`
+      );
+
       return { values, labels };
     };
     
@@ -2954,9 +3008,9 @@ const App = () => {
                     <WeatherIcon className="w-16 h-16 text-red-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-red-700 mb-2">
-                    {t('weatherShock')}: {weatherShock.name}
+                    {t('weatherShock')}: {getWeatherShockDisplayName()}
                   </h3>
-                  <p className="text-gray-600">{t('farmAffected')} {weatherShock.name.toLowerCase()}</p>
+                  <p className="text-gray-600">{t('farmAffected')}{' '} {language === 'hindi' ? getWeatherShockDisplayName() : (weatherShock.weatherShockEnglish || weatherShock.name).toLowerCase()}</p>
                 </div>
               ) : (
                 <div className="mb-8">
@@ -3124,8 +3178,8 @@ const App = () => {
                   </div>
 
                   {/* Season label - narrower width so bars can sit closer */}
-                  <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20">
-                    {labels[idx]}
+                  <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20 h-8 sm:h-10 flex items-start justify-center leading-tight">
+                    <span>{labels[idx]}</span>
                   </div>
                 </div>
               );
@@ -3159,8 +3213,8 @@ const App = () => {
                 </div>
 
                 {/* Label */}
-                <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20">
-                  {t("noWeatherScore")}
+                <div className="text-[10px] sm:text-xs text-gray-700 mt-3 text-center w-16 sm:w-20 h-8 sm:h-10 flex items-start justify-center leading-tight">
+                  <span>{t('noWeatherScore')}</span>
                 </div>
               </div>
             )}
@@ -3218,13 +3272,11 @@ const App = () => {
                 const seasonScores = scores.slice(0, idx + 2);
                 const seasonNoWeatherScores = noWeatherScores.slice(0, idx + 2);
                 const seasonLabels = [
-                  t('start'), 
-                  language === 'hindi' ? 'ରବି' : 'Rabi', 
-                  language === 'hindi' ? 'ଖରିଫ' : 'Kharif', 
-                  language === 'hindi' ? 'ରବି' : 'Rabi'
-                ].slice(0, idx + 2);
+                  t('start'),
+                  ...Array.from({ length: idx + 1 }, (_, j) => getSeasonDamageLabel(j)),
+                ];
                 
-                const sType = (idx + 1) % 2 === 1 ? (language === 'hindi' ? 'ରବି' : 'Rabi') : (language === 'hindi' ? 'ଖରିଫ' : 'Kharif');
+                const sType = getSeasonDamageLabel(idx);
                 
                 return (
                   <div key={idx} className="border border-gray-200 rounded-lg p-6">
