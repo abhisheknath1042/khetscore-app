@@ -78,7 +78,7 @@ const translations = {
     viewAllFarmers: "View All Farmers",
     availableFarmers: "Available Farmers",
     farmerNotFound: "Farmer ID not found",
-    farmerAlreadySimulated: "This farmer already has a completed simulation. Please delete it from the dashboard before creating a new one.",
+    farmerAlreadySimulated: "This farmer already has a completed simulation. Please select another farmer.",
     loadingFarmerData: "Loading farmer data...",
     allFarmers: "All Farmers",
     name: "Name",
@@ -86,6 +86,7 @@ const translations = {
     action: "Action",
     select: "Select",
     close: "Close",
+    simulationCompleted: "Simulation completed for Farmer ID",
     
     // Season Intro
     season: "Season",
@@ -181,7 +182,7 @@ const translations = {
     viewAllFarmers: "ସମସ୍ତ କୃଷକମାନେ ଦେଖନ୍ତୁ",
     availableFarmers: "ଉପଲବ୍ଧ କୃଷକମାନେ",
     farmerNotFound: "କୃଷକ ID ମିଳିଲା ନାହିଁ",
-    farmerAlreadySimulated: "ଏହି କୃଷକଙ୍କର ସିମୁଲେସନ୍ ପୂର୍ବରୁ ହେଇସାରିଛି। ନୂତନ ସିମୁଲେସନ୍ ତିଆରି କରିବା ପୂର୍ବରୁ ଦୟାକରି ଡ୍ୟାଶବୋର୍ଡରୁ ଏହାକୁ ହଟାନ୍ତୁ।",
+    farmerAlreadySimulated: "ଏହି କୃଷକଙ୍କର ସିମୁଲେସନ ପୂର୍ବରୁ ସମାପ୍ତ ହୋଇଛି। ଦୟାକରି ଅନ୍ୟ କୃଷକ ID ପ୍ରବେଶ କରନ୍ତୁ",
     loadingFarmerData: "କୃଷକ ତଥ୍ୟ ଲୋଡ୍ ହେଉଛି...",
     allFarmers: "ସମସ୍ତ କୃଷକ",
     name: "ନାମ",
@@ -189,6 +190,7 @@ const translations = {
     action: "କାର୍ଯ୍ୟ",
     select: "ଚୁନନ୍ତୁ",
     close: "ବନ୍ଦ କରନ୍ତୁ",
+    simulationCompleted: "କୃଷକ ID ପାଇଁ ସିମୁଲେସନ ସମାପ୍ତ ହୋଇଛି",
     
     // Season Intro
     season: "ଋତୁ",
@@ -573,6 +575,7 @@ const App = () => {
   const [uploadingToDrive, setUploadingToDrive] = useState(false);
   const [driveUploadStatus, setDriveUploadStatus] = useState(null); // { success: boolean, message: string, link?: string }
   const [comprehensionAnswers, setComprehensionAnswers] = useState({});
+  const [uploadedSimulationIds, setUploadedSimulationIds] = useState([]);
 
   // Inside App component, after state declarations
   const { t } = useTranslation(language);
@@ -607,45 +610,38 @@ const App = () => {
       });
   }, []);
 
-  // Load CSV data
+  // Load farmer data from Supabase instead of CSV
   useEffect(() => {
-    // Load CSV data from public folder
-    setCsvLoading(true);
-    fetch('/farmerdata_prefill.csv')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('CSV file not found');
-        }
-        return response.text();
-      })
-      .then(csvText => {
-        console.log('CSV Text loaded:', csvText);
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            console.log('Parsed data:', results.data);
-            if (results.data && results.data.length > 0) {
-              setFarmersData(results.data);
-              setCsvLoading(false);
-              setCsvError('');
-            } else {
-              setCsvError('No data found in CSV file');
-              setCsvLoading(false);
-            }
-          },
-          error: (error) => {
-            console.error('Parse error:', error);
-            setCsvError('Error parsing CSV file');
-            setCsvLoading(false);
-          }
-        });
-      })
-      .catch(error => {
-        console.error('Error loading CSV file:', error);
-        setCsvError('Failed to load farmer data.');
+    const loadFarmers = async () => {
+      setCsvLoading(true);
+      setCsvError('');
+
+      const { data, error } = await supabase
+        .from('farmers')
+        .select('farmer_id, name, khetscore, treatment, sim_completed, completed_at');
+
+      if (error) {
+        console.error('Error loading farmers from Supabase:', error);
+        setCsvError('Error loading farmer data');
         setCsvLoading(false);
-      });
+        return;
+      }
+
+      // 🔴 CASE SENSITIVE MAPPING:
+      // Supabase columns (farmer_id, name, khetscore, treatment)
+      //  → CSV-style keys used everywhere in your app (farmerID, Name, Khetscore, treatment)
+      const normalized = (data || []).map(row => ({
+        farmerID: row.farmer_id,
+        Name: row.name,
+        Khetscore: row.khetscore,
+        treatment: row.treatment,
+        sim_completed: row.sim_completed ?? false,
+        completed_at: row.completed_at || null,
+      }));
+
+      setFarmersData(normalized);
+      setCsvLoading(false);
+    };
 
     // Check for existing session in localStorage
     const checkAuth = async () => {
@@ -686,6 +682,7 @@ const App = () => {
     };
 
     checkAuth();
+    loadFarmers();
   }, []);
 
   // Load user data
@@ -694,7 +691,15 @@ const App = () => {
       // Load simulations from localStorage
       const savedSims = localStorage.getItem(`simulations_${userId}`);
       if (savedSims) {
-        setAllSimulations(JSON.parse(savedSims));
+        const parsed = JSON.parse(savedSims);
+
+        // Ensure every simulation has an uploadedToDrive flag
+        const normalized = parsed.map(sim => ({
+          ...sim,
+          uploadedToDrive: !!sim.uploadedToDrive,  // default false if missing
+        }));
+
+        setAllSimulations(normalized);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -707,8 +712,10 @@ const App = () => {
       const newSim = {
         id: Date.now(),
         timestamp: new Date().toISOString(),
-        ...simulationData
+        uploadedToDrive: false,
+        ...simulationData,
       };
+
       const updatedSims = [...allSimulations, newSim];
       setAllSimulations(updatedSims);
       localStorage.setItem(`simulations_${currentUser.id}`, JSON.stringify(updatedSims));
@@ -722,11 +729,15 @@ const App = () => {
     return Math.round(parseFloat(score));
   };
 
-  // Get filtered farmers based on treatment filter
+  // Get filtered farmers based on treatment filter and completion status
   const getFilteredFarmers = () => {
-    if (!treatmentFilter) return farmersData;
-    return farmersData.filter(farmer => farmer.treatment === treatmentFilter);
+    // Only farmers who have NOT completed simulation
+    const available = farmersData.filter(farmer => !farmer.sim_completed);
+
+    if (!treatmentFilter) return available;
+    return available.filter(farmer => farmer.treatment === treatmentFilter);
   };
+
 
   // Handle delete simulation
   const handleDeleteSimulation = (simId) => {
@@ -743,7 +754,7 @@ const App = () => {
     setShowDeleteConfirm(true);
   };
 
-  // Confirm delete simulation
+  // Confirm delete simulation & Save & return to dashboard
   const handleSaveAndReturn = async () => {
     // Only save if this is a new simulation, not viewing existing
     if (!isViewingExisting) {
@@ -758,9 +769,37 @@ const App = () => {
         comprehensionAnswers: comprehensionAnswers,
         treatment: treatmentFilter
       });
+
+      // 🔹 Mark farmer as completed in Supabase (using DB column name farmer_id)
+      try {
+        const nowIso = new Date().toISOString();
+
+        const { error } = await supabase
+          .from('farmers')
+          .update({
+            sim_completed: true,
+            completed_at: nowIso,
+          })
+          .eq('farmer_id', currentFarmer.farmerID); // CASE SENSITIVE: DB column is farmer_id
+
+        if (error) {
+          console.error('Failed to mark farmer as completed in Supabase:', error);
+        } else {
+          // 🔹 Update local farmersData so UI hides this farmer immediately
+          setFarmersData(prev =>
+            prev.map(f =>
+              f.farmerID === currentFarmer.farmerID
+                ? { ...f, sim_completed: true, completed_at: nowIso }
+                : f
+            )
+          );
+        }
+      } catch (err) {
+        console.error('Unexpected error updating farmer as completed:', err);
+      }
     }
-    
-    // Clear all simulation data
+
+    // Clear all simulation data (existing code)
     setCurrentFarmer(null);
     setCurrentSeason(1);
     setSelectedPractices([]);
@@ -987,7 +1026,7 @@ const App = () => {
     // Check if farmer already has completed simulation
     const existingSimulation = allSimulations.find(sim => sim.farmer.id === farmerID);
     if (existingSimulation) {
-      setError('This farmer already has a completed simulation. Please delete it from the dashboard before creating a new one.');
+      setError('farmerAlreadySimulated');
       return;
     }
 
@@ -1011,7 +1050,7 @@ const App = () => {
       });
       setScreen(treatmentFilter === 'treat1' ? 'info-path1' : 'info-path2');
     } else {
-      setError('Farmer ID not found');
+      setError('simulationCompleted');
     }
   };
 
@@ -1105,96 +1144,152 @@ const App = () => {
     }));
   }
 
-  // Handle export CSV
-  const handleExportCSV = (simulation = null) => {
-    const sim = simulation || {
+  // Build a normalized simulation object for export
+  const buildSimulationSnapshot = (simulation) => {
+    if (simulation) return simulation;
+
+    if (!currentFarmer || !seasonData) {
+      console.error('No current simulation data available for CSV export.');
+      return null;
+    }
+
+    return {
       farmer: {
         name: currentFarmer.Name,
         id: currentFarmer.farmerID,
-        initialKhetscore: currentFarmer.initialKhetscore
+        initialKhetscore: currentFarmer.initialKhetscore,
       },
       seasons: seasonData,
-      comprehensionAnswers: comprehensionAnswers,
-      treatment: treatmentFilter
+      comprehensionAnswers,
+      treatment: treatmentFilter,
     };
+  };
 
-    // Process comprehension answers
-    const comprehensionData = {};
-    const questions = sim.treatment === 'treat2' 
-      ? comprehensionQuestionsTreatment2.english
-      : comprehensionQuestionsTreatment1.english;
-    
+  // Build comprehension Q1–Q5 columns in English
+  const buildComprehensionColumns = (sim) => {
+    const questions =
+      sim.treatment === 'treat2'
+        ? comprehensionQuestionsTreatment2.english
+        : comprehensionQuestionsTreatment1.english;
+
+    const cols = {};
+
     questions.forEach((q, index) => {
-      const answer = sim.comprehensionAnswers?.[q.id] || comprehensionAnswers[q.id];
-      comprehensionData[`ComprehensionQ${index + 1}`] = translateToEnglish(answer, 'comprehension') || 'Not answered';
+      const rawAnswer =
+        sim.comprehensionAnswers?.[q.id] ?? comprehensionAnswers[q.id];
+      cols[`ComprehensionQ${index + 1}`] =
+        translateToEnglish(rawAnswer, 'comprehension') || 'Not answered';
     });
 
-    // Add empty column after Q4 for Treatment 1
+    // For treat1 we still keep Q5 as an empty column so structure is consistent
     if (sim.treatment === 'treat1') {
-      comprehensionData['ComprehensionQ5'] = '';
+      cols['ComprehensionQ5'] = cols['ComprehensionQ5'] || '';
     }
 
-    // Helper to format season data
-    const formatSeasonData = (seasonIndex) => {
-      const season = sim.seasons[seasonIndex];
-      if (!season) return { practices: '', likelihood: '', weather: '', endScore: '', noWeatherScore: '' };
+    return cols;
+  };
 
+  // Build Season 1/2/3 columns (practices, likelihoods, weather, scores)
+  const buildSeasonColumns = (sim, seasonIndex) => {
+    const season = sim.seasons?.[seasonIndex];
+
+    if (!season) {
       return {
-        practices: season.practiceIds?.join('; ') || '',
-        likelihood: season.practiceIds && season.likelihood
-          ? season.practiceIds.map(id => {
-              const likelihood = season.likelihood[id];
-              const translatedLabel = translateToEnglish(likelihood?.label, 'likelihood');
-              return `${id}_${likelihood?.id || ''}_${translatedLabel}`;
-            }).join('; ')
-          : '',
-        weather: translateToEnglish(season.weatherShockEnglish || season.weatherShock, 'weather'),
-        endScore: season.endScore || '',
-        noWeatherScore: season.noWeatherScore || season.endScore || ''
+        practices: '',
+        likelihood: '',
+        weather: '',
+        endScore: '',
+        noWeatherScore: '',
       };
+    }
+
+    const practices = season.practiceIds?.join('; ') || '';
+
+    const likelihood =
+      season.practiceIds && season.likelihood
+        ? season.practiceIds
+            .map((id) => {
+              const l = season.likelihood[id];
+              const englishLabel = translateToEnglish(l?.label, 'likelihood');
+              const metaId = l?.id ?? '';
+              return `${id}_${metaId}_${englishLabel}`;
+            })
+            .join('; ')
+        : '';
+
+    const weather = translateToEnglish(
+      season.weatherShockEnglish || season.weatherShock,
+      'weather'
+    );
+
+    return {
+      practices,
+      likelihood,
+      weather,
+      endScore: season.endScore ?? '',
+      noWeatherScore: season.noWeatherScore ?? season.endScore ?? '',
     };
+  };
 
-    const season1 = formatSeasonData(0);
-    const season2 = formatSeasonData(1);
-    const season3 = formatSeasonData(2);
+  // Handle export CSV
+  const handleExportCSV = (simulation = null) => {
+    const sim = buildSimulationSnapshot(simulation);
 
-    const csvData = [{
+    if (!sim) {
+      // Already logged error in buildSimulationSnapshot
+      return;
+    }
+
+    // 1) Comprehension columns (always English)
+    const comprehensionCols = buildComprehensionColumns(sim);
+
+    // 2) Season-wise data (practices, likelihoods, weather, scores)
+    const season1 = buildSeasonColumns(sim, 0);
+    const season2 = buildSeasonColumns(sim, 1);
+    const season3 = buildSeasonColumns(sim, 2);
+
+    // 3) Single CSV row
+    const row = {
       Name: sim.farmer.name,
       farmerID: sim.farmer.id,
       Treatment: sim.treatment || treatmentFilter,
       InitialKhetscore: sim.farmer.initialKhetscore,
-      
-      ...comprehensionData,
-      
+
+      ...comprehensionCols,
+
       // Season 1
       Season1_Practices: season1.practices,
       Season1_Likelihood: season1.likelihood,
       Season1_WeatherShock: season1.weather,
       Season1_EndScore: season1.endScore,
       Season1_NoWeatherScore: season1.noWeatherScore,
-      
+
       // Season 2
       Season2_Practices: season2.practices,
       Season2_Likelihood: season2.likelihood,
       Season2_WeatherShock: season2.weather,
       Season2_EndScore: season2.endScore,
       Season2_NoWeatherScore: season2.noWeatherScore,
-      
+
       // Season 3
       Season3_Practices: season3.practices,
       Season3_Likelihood: season3.likelihood,
       Season3_WeatherShock: season3.weather,
       Season3_EndScore: season3.endScore,
-      Season3_NoWeatherScore: season3.noWeatherScore
-    }];
-    
-    const csv = Papa.unparse(csvData);
+      Season3_NoWeatherScore: season3.noWeatherScore,
+    };
+
+    // 4) Convert to CSV and trigger download
+    const csv = Papa.unparse([row]);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = `farmer_${sim.farmer.id}_simulation_${Date.now()}.csv`;
     a.click();
+
+    window.URL.revokeObjectURL(url);
   };
 
   // Handle view summary of previous simulation
@@ -1226,68 +1321,97 @@ const App = () => {
 
     // Format comprehension answers for CSV
     const comprehensionData = {};
-    const questions = (sim.treatment || treatmentFilter) === 'treat2' 
-      ? comprehensionQuestionsTreatment2.english
-      : comprehensionQuestionsTreatment1.english;
+    const questions =
+      (sim.treatment || treatmentFilter) === 'treat2'
+        ? comprehensionQuestionsTreatment2.english
+        : comprehensionQuestionsTreatment1.english;
 
     questions.forEach((q, index) => {
-      const answer = sim.comprehensionAnswers 
-        ? sim.comprehensionAnswers[q.id] 
+      const answer = sim.comprehensionAnswers
+        ? sim.comprehensionAnswers[q.id]
         : comprehensionAnswers[q.id];
       comprehensionData[`ComprehensionQ${index + 1}`] = answer || 'Not answered';
     });
 
     // Generate CSV content (same as export)
-    const csvData = [{
-      Name: sim.farmer.name,
-      farmerID: sim.farmer.id,
-      Treatment: sim.treatment || treatmentFilter,
-      InitialKhetscore: sim.farmer.initialKhetscore,
-      
-      // Add comprehension answers
-      ...comprehensionData,
-      
-      Season1_Practices: sim.seasons[0]?.practiceIds ? sim.seasons[0].practiceIds.join('; ') : '',
-      Season1_Likelihood: sim.seasons[0]?.practiceIds && sim.seasons[0]?.likelihood 
-        ? sim.seasons[0].practiceIds.map(id => {
-            const likelihood = sim.seasons[0].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season1_WeatherShock: sim.seasons[0]?.weatherShock || '',
-      Season1_EndScore: sim.seasons[0]?.endScore || '',
-      Season1_NoWeatherScore: sim.seasons[0]?.noWeatherScore || sim.seasons[0]?.endScore || '',
-      
-      Season2_Practices: sim.seasons[1]?.practiceIds ? sim.seasons[1].practiceIds.join('; ') : '',
-      Season2_Likelihood: sim.seasons[1]?.practiceIds && sim.seasons[1]?.likelihood
-        ? sim.seasons[1].practiceIds.map(id => {
-            const likelihood = sim.seasons[1].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season2_WeatherShock: sim.seasons[1]?.weatherShock || '',
-      Season2_EndScore: sim.seasons[1]?.endScore || '',
-      Season2_NoWeatherScore: sim.seasons[1]?.noWeatherScore || sim.seasons[1]?.endScore || '',
-      
-      Season3_Practices: sim.seasons[2]?.practiceIds ? sim.seasons[2].practiceIds.join('; ') : '',
-      Season3_Likelihood: sim.seasons[2]?.practiceIds && sim.seasons[2]?.likelihood
-        ? sim.seasons[2].practiceIds.map(id => {
-            const likelihood = sim.seasons[2].likelihood[id];
-            return `${id}_${likelihood?.id || ''}`;
-          }).join('; ')
-        : '',
-      Season3_WeatherShock: sim.seasons[2]?.weatherShock || '',
-      Season3_EndScore: sim.seasons[2]?.endScore || '',
-      Season3_NoWeatherScore: sim.seasons[2]?.noWeatherScore || sim.seasons[2]?.endScore || ''
-    }];
-    
+    const csvData = [
+      {
+        Name: sim.farmer.name,
+        farmerID: sim.farmer.id,
+        Treatment: sim.treatment || treatmentFilter,
+        InitialKhetscore: sim.farmer.initialKhetscore,
+
+        // Add comprehension answers
+        ...comprehensionData,
+
+        // Season 1
+        Season1_Practices: sim.seasons[0]?.practiceIds
+          ? sim.seasons[0].practiceIds.join('; ')
+          : '',
+        Season1_Likelihood:
+          sim.seasons[0]?.practiceIds && sim.seasons[0]?.likelihood
+            ? sim.seasons[0].practiceIds
+                .map((id) => {
+                  const likelihood = sim.seasons[0].likelihood[id];
+                  return `${id}_${likelihood?.id || ''}`;
+                })
+                .join('; ')
+            : '',
+        Season1_WeatherShock: sim.seasons[0]?.weatherShock || '',
+        Season1_EndScore: sim.seasons[0]?.endScore || '',
+        Season1_NoWeatherScore:
+          sim.seasons[0]?.noWeatherScore || sim.seasons[0]?.endScore || '',
+
+        // Season 2
+        Season2_Practices: sim.seasons[1]?.practiceIds
+          ? sim.seasons[1].practiceIds.join('; ')
+          : '',
+        Season2_Likelihood:
+          sim.seasons[1]?.practiceIds && sim.seasons[1]?.likelihood
+            ? sim.seasons[1].practiceIds
+                .map((id) => {
+                  const likelihood = sim.seasons[1].likelihood[id];
+                  return `${id}_${likelihood?.id || ''}`;
+                })
+                .join('; ')
+            : '',
+        Season2_WeatherShock: sim.seasons[1]?.weatherShock || '',
+        Season2_EndScore: sim.seasons[1]?.endScore || '',
+        Season2_NoWeatherScore:
+          sim.seasons[1]?.noWeatherScore || sim.seasons[1]?.endScore || '',
+
+        // Season 3
+        Season3_Practices: sim.seasons[2]?.practiceIds
+          ? sim.seasons[2].practiceIds.join('; ')
+          : '',
+        Season3_Likelihood:
+          sim.seasons[2]?.practiceIds && sim.seasons[2]?.likelihood
+            ? sim.seasons[2].practiceIds
+                .map((id) => {
+                  const likelihood = sim.seasons[2].likelihood[id];
+                  return `${id}_${likelihood?.id || ''}`;
+                })
+                .join('; ')
+            : '',
+        Season3_WeatherShock: sim.seasons[2]?.weatherShock || '',
+        Season3_EndScore: sim.seasons[2]?.endScore || '',
+        Season3_NoWeatherScore:
+          sim.seasons[2]?.noWeatherScore || sim.seasons[2]?.endScore || ''
+      }
+    ];
+
     const csvContent = Papa.unparse(csvData);
-    const fileName = `farmer_${sim.farmer.id}_simulation_${new Date().toISOString().split('T')[0]}.csv`;
+    const fileName = `farmer_${sim.farmer.id}_simulation_${new Date()
+      .toISOString()
+      .split('T')[0]}.csv`;
 
     if (!googleApiLoaded) {
       setDriveUploadStatus({
         success: false,
-        message: language === 'hindi' ? 'Google API ଲୋଡ୍ ହୋଇନାହିଁ। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।' : 'Google API not loaded. Please try again.'
+        message:
+          language === 'hindi'
+            ? 'Google API ଲୋଡ୍ ହୋଇନାହିଁ। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+            : 'Google API not loaded. Please try again.'
       });
       return;
     }
@@ -1299,14 +1423,27 @@ const App = () => {
       const result = await uploadToGoogleDrive(csvContent, fileName);
       setDriveUploadStatus({
         success: true,
-        message: language === 'hindi' ? 'Google Drive ରେ ସଫଳତାର ସହ ଅପଲୋଡ୍ କରାଯାଇଛି ' : 'Successfully uploaded to Google Drive!',
+        message:
+          language === 'hindi'
+            ? 'Google Drive ରେ ସଫଳତାର ସହ ଅପଲୋଡ୍ କରାଯାଇଛି '
+            : 'Successfully uploaded to Google Drive!',
         link: result.webViewLink
       });
+
+      // ✅ Mark this farmer’s simulation as uploaded
+      if (sim?.farmer?.id) {
+        setUploadedSimulationIds((prev) =>
+          prev.includes(sim.farmer.id) ? prev : [...prev, sim.farmer.id]
+        );
+      }
     } catch (error) {
       console.error('Upload error:', error);
       setDriveUploadStatus({
         success: false,
-        message: language === 'hindi' ? 'ଅପଲୋଡ୍ ବିଫଳ ହେଲା। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।' : 'Upload failed. Please try again.'
+        message:
+          language === 'hindi'
+            ? 'ଅପଲୋଡ୍ ବିଫଳ ହେଲା। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+            : 'Upload failed. Please try again.'
       });
     } finally {
       setUploadingToDrive(false);
@@ -1533,13 +1670,13 @@ const App = () => {
                   setTreatmentFilter(null);
                   setCurrentPractices(practices); // Reset practices when going back
                 }}
-                className="flex-1 bg-gray-200 text-gray-700 px-4 py-4 rounded-lg font-medium text-base hover:bg-gray-300 transition-all"
+                className="flex-1 bg-gray-200 text-gray-700 px-3 py-4 rounded-md text-sm sm:text-base hover:bg-gray-300 transition"
               >
                 ← {t('backToSelection')}
               </button>
               <button
                 onClick={() => setScreen('comprehension-check')}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-medium text-base hover:bg-green-700 transition-all shadow"
+                className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md text-sm sm:text-base hover:bg-green-700 transition shadow"
               >
                 {t('continue')} →
               </button>
@@ -1629,13 +1766,13 @@ const App = () => {
                 setTreatmentFilter(null);
                 setCurrentPractices(practices);
               }}
-              className="flex-1 bg-gray-200 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
+              className="fflex-1 bg-gray-200 text-gray-700 px-3 py-2 rounded-md text-sm sm:text-base hover:bg-gray-300 transition"
             >
               ← {t('backToSelection')}
             </button>
             <button
               onClick={() => setScreen('comprehension-check')}
-              className="flex-1 bg-green-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+              className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md text-sm sm:text-base hover:bg-green-700 transition shadow-lg"
             >
               {t('continue')} →
             </button>
@@ -2148,12 +2285,17 @@ const App = () => {
                               {t('view')}
                             </button>
                             <button
-                              onClick={() => handleExportCSV(sim)}
-                              className="flex items-center gap-1 bg-green-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors"
-                              title="Export to CSV"
+                              onClick={() => handleUploadToDrive(sim)}
+                              disabled={
+                                uploadingToDrive ||
+                                !googleApiLoaded ||
+                                uploadedSimulationIds.includes(sim.farmer.id)
+                              }
+                              className="flex items-center gap-1 bg-purple-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                              title="Upload to Google Drive"
                             >
-                              <Download className="w-4 h-4" />
-                              {t('export')}
+                              <Upload className="w-4 h-4" />
+                              {uploadingToDrive ? '...' : t('uploadToDrive')}
                             </button>                            
                             <button
                               onClick={() => confirmDelete(sim)}
@@ -2276,7 +2418,7 @@ const App = () => {
               {error && (
                 <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
                   <AlertCircle className="w-5 h-5" />
-                  <span>{error}</span>
+                  <span>{t(error)}</span>
                 </div>
               )}
               
@@ -2551,35 +2693,38 @@ const App = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-4 sm:p-8">
-        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        {/* card */}
+        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl flex flex-col">
           {/* Header */}
-          <header className="bg-green-600 text-white py-8 px-2 text-center flex items-center gap-3 justify-center">
-            <div className="inline-block bg-white/20 p-2 rounded-full mb-3">
+          <header className="bg-green-600 text-white py-6 px-3 text-center flex items-center gap-3 justify-center">
+            <div className="inline-block bg-white/20 p-2 rounded-full">
               <BookOpen className="w-10 h-10 text-white" aria-hidden="true" />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold">{t('simulationInfo')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {t('simulationInfo')}
+            </h1>
           </header>
 
           {/* Image / Content */}
-          <main className="relative bg-gray-900 flex-1 min-h-0">
-            <div className="h-[24rem] sm:h-[36Srem]">
-              <img
-                src={simImage.src}
-                alt={simImage.alt}
-                className="w-full h-full object-contain bg-gray-900"
-                onError={(e) => { e.currentTarget.alt = 'Image failed to load'; }}
-              />
-            </div>
+          <main className="relative bg-gray-900 flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4">
+            <img
+              src={simImage.src}
+              alt={simImage.alt}
+              className="w-full max-h-[70vh] object-contain bg-gray-900"
+              onError={(e) => {
+                e.currentTarget.alt = 'Image failed to load';
+              }}
+            />
           </main>
 
           {/* Action Buttons */}
-          <div className="p-6 sm:p-8 pt-0 mt-auto flex flex-col sm:flex-row gap-4">
+          <div className="p-4 sm:p-6 pt-0 mt-auto flex flex-col sm:flex-row gap-3 flex-shrink-0">
             <button
               type="button"
               onClick={() => {
                 setScreen('comprehension-check');
               }}
-              className="flex-1 bg-gray-200 text-gray-700 px-6 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition"
+              className="flex-1 bg-gray-200 text-gray-700 px-3 py-4 rounded-md text-sm sm:text-base font-medium hover:bg-gray-300 transition"
             >
               ← {t('back')}
             </button>
@@ -2587,7 +2732,7 @@ const App = () => {
             <button
               type="button"
               onClick={() => setScreen('season-intro')}
-              className="flex-1 bg-green-600 text-white px-6 py-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition shadow-lg hover:shadow-xl"
+              className="flex-1 bg-green-600 text-white px-3 py-4 rounded-md text-sm sm:text-base font-medium hover:bg-green-700 transition shadow"
             >
               {t('continueToKhetscore')} →
             </button>
@@ -3332,22 +3477,30 @@ const App = () => {
               })}
             </div>
             
-            <div className="flex flex-wrap gap-4 mt-8">
+            <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 mt-8">
               <button
                 onClick={() => handleExportCSV()}
-                className="flex-1 min-w-[200px] bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 min-w-[160px] bg-blue-600 text-white px-3 py-4 rounded-md text-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm"
               >
-                <Download className="w-5 h-5" /> {t('exportCSV')}
+                <Download className="w-4 h-4" /> {t('exportCSV')}
               </button>
+
               <button
                 onClick={() => handleUploadToDrive()}
-                className="flex-1 min-w-[200px] bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                disabled={
+                  uploadingToDrive ||
+                  !googleApiLoaded ||
+                  (currentFarmer && uploadedSimulationIds.includes(currentFarmer.farmerID))
+                }
+                className="flex-1 min-w-[160px] bg-[#6c2484] text-white px-3 py-4 rounded-md text-lg font-medium hover:bg-purple-700 transition flex items-center justify-center gap-2 shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                <Upload className="w-5 h-5" /> {t('uploadToDrive')}
+                <Upload className="w-4 h-4" />
+                {uploadingToDrive ? '...' : t('uploadToDrive')}
               </button>
+
               <button
                 onClick={handleSaveAndReturn}
-                className="flex-1 min-w-[200px] bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                className="flex-1 min-w-[160px] bg-green-600 text-white px-3 py-4 rounded-md text-lg font-medium hover:bg-green-700 transition shadow-sm"
               >
                 {t('saveReturn')}
               </button>
