@@ -1,7 +1,7 @@
 // khetscore-app/src/App.js
 // import necessary libraries and components
 import React, { useState, useEffect } from 'react';
-import { Download, ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, EyeOff, PlayCircle, Home, BookOpen, Upload } from 'lucide-react';
+import { ChevronRight, AlertCircle, CloudRain, Droplets, Bug, Sun, LogOut, Users, BarChart3, TrendingUp, Leaf, ArrowLeft, Eye, EyeOff, PlayCircle, Home, BookOpen, Upload } from 'lucide-react';
 import Papa from 'papaparse';
 import { supabase } from './supabaseClient';
 import bcrypt from 'bcryptjs';
@@ -565,7 +565,6 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState(null);
-  const [showFarmerList, setShowFarmerList] = useState(false);
   const [noWeatherKhetscore, setNoWeatherKhetscore] = useState(null);
   const [isViewingExisting, setIsViewingExisting] = useState(false);
   const [currentPractices, setCurrentPractices] = useState(practices);
@@ -1054,11 +1053,6 @@ const App = () => {
     }
   };
 
-  // Handle farmer selection from list
-  const handleSelectFarmer = (farmer) => {
-    setFarmerID(farmer.farmerID);
-  };
-
   // Handle weather continue
   const handleWeatherContinue = () => {
     // Get English weather shock name for storage
@@ -1146,8 +1140,10 @@ const App = () => {
 
   // Build a normalized simulation object for export
   const buildSimulationSnapshot = (simulation) => {
+    // If we were passed a full simulation (e.g. from history), use it directly
     if (simulation) return simulation;
 
+    // Otherwise build from current state
     if (!currentFarmer || !seasonData) {
       console.error('No current simulation data available for CSV export.');
       return null;
@@ -1165,10 +1161,12 @@ const App = () => {
     };
   };
 
-  // Build comprehension Q1–Q5 columns in English
+  // Build comprehension Q1–Q5 columns (always English)
   const buildComprehensionColumns = (sim) => {
+    const treatment = sim.treatment || treatmentFilter;
+
     const questions =
-      sim.treatment === 'treat2'
+      treatment === 'treat2'
         ? comprehensionQuestionsTreatment2.english
         : comprehensionQuestionsTreatment1.english;
 
@@ -1176,14 +1174,16 @@ const App = () => {
 
     questions.forEach((q, index) => {
       const rawAnswer =
-        sim.comprehensionAnswers?.[q.id] ?? comprehensionAnswers[q.id];
+        (sim.comprehensionAnswers && sim.comprehensionAnswers[q.id]) ??
+        comprehensionAnswers[q.id];
+
       cols[`ComprehensionQ${index + 1}`] =
         translateToEnglish(rawAnswer, 'comprehension') || 'Not answered';
     });
 
     // For treat1 we still keep Q5 as an empty column so structure is consistent
-    if (sim.treatment === 'treat1') {
-      cols['ComprehensionQ5'] = cols['ComprehensionQ5'] || '';
+    if (treatment === 'treat1' && !cols.ComprehensionQ5) {
+      cols.ComprehensionQ5 = '';
     }
 
     return cols;
@@ -1191,7 +1191,7 @@ const App = () => {
 
   // Build Season 1/2/3 columns (practices, likelihoods, weather, scores)
   const buildSeasonColumns = (sim, seasonIndex) => {
-    const season = sim.seasons?.[seasonIndex];
+    const season = sim.seasons && sim.seasons[seasonIndex];
 
     if (!season) {
       return {
@@ -1203,20 +1203,32 @@ const App = () => {
       };
     }
 
-    const practices = season.practiceIds?.join('; ') || '';
+    // Practices: IDs only (language-agnostic)
+    const practices = season.practiceIds
+      ? season.practiceIds.join('; ')
+      : '';
 
+    // Likelihood: include id + optionId + ENGLISH label
     const likelihood =
       season.practiceIds && season.likelihood
         ? season.practiceIds
             .map((id) => {
               const l = season.likelihood[id];
-              const englishLabel = translateToEnglish(l?.label, 'likelihood');
-              const metaId = l?.id ?? '';
+              if (!l) return '';
+
+              const englishLabel = translateToEnglish(
+                l.label,
+                'likelihood'
+              );
+              const metaId = l.id ?? '';
+
               return `${id}_${metaId}_${englishLabel}`;
             })
+            .filter(Boolean)
             .join('; ')
         : '';
 
+    // Weather shock: always mapped to English
     const weather = translateToEnglish(
       season.weatherShockEnglish || season.weatherShock,
       'weather'
@@ -1229,67 +1241,6 @@ const App = () => {
       endScore: season.endScore ?? '',
       noWeatherScore: season.noWeatherScore ?? season.endScore ?? '',
     };
-  };
-
-  // Handle export CSV
-  const handleExportCSV = (simulation = null) => {
-    const sim = buildSimulationSnapshot(simulation);
-
-    if (!sim) {
-      // Already logged error in buildSimulationSnapshot
-      return;
-    }
-
-    // 1) Comprehension columns (always English)
-    const comprehensionCols = buildComprehensionColumns(sim);
-
-    // 2) Season-wise data (practices, likelihoods, weather, scores)
-    const season1 = buildSeasonColumns(sim, 0);
-    const season2 = buildSeasonColumns(sim, 1);
-    const season3 = buildSeasonColumns(sim, 2);
-
-    // 3) Single CSV row
-    const row = {
-      Name: sim.farmer.name,
-      farmerID: sim.farmer.id,
-      Treatment: sim.treatment || treatmentFilter,
-      InitialKhetscore: sim.farmer.initialKhetscore,
-
-      ...comprehensionCols,
-
-      // Season 1
-      Season1_Practices: season1.practices,
-      Season1_Likelihood: season1.likelihood,
-      Season1_WeatherShock: season1.weather,
-      Season1_EndScore: season1.endScore,
-      Season1_NoWeatherScore: season1.noWeatherScore,
-
-      // Season 2
-      Season2_Practices: season2.practices,
-      Season2_Likelihood: season2.likelihood,
-      Season2_WeatherShock: season2.weather,
-      Season2_EndScore: season2.endScore,
-      Season2_NoWeatherScore: season2.noWeatherScore,
-
-      // Season 3
-      Season3_Practices: season3.practices,
-      Season3_Likelihood: season3.likelihood,
-      Season3_WeatherShock: season3.weather,
-      Season3_EndScore: season3.endScore,
-      Season3_NoWeatherScore: season3.noWeatherScore,
-    };
-
-    // 4) Convert to CSV and trigger download
-    const csv = Papa.unparse([row]);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `farmer_${sim.farmer.id}_simulation_${Date.now()}.csv`;
-    a.click();
-
-    window.URL.revokeObjectURL(url);
   };
 
   // Handle view summary of previous simulation
@@ -1306,34 +1257,21 @@ const App = () => {
     setScreen('summary');
   };
 
-  // Handle upload to Google Drive
+  // Handle upload to Google Drive (also ENGLISH-only)
   const handleUploadToDrive = async (simulation = null) => {
-    const sim = simulation || {
-      farmer: {
-        name: currentFarmer.Name,
-        id: currentFarmer.farmerID,
-        initialKhetscore: currentFarmer.initialKhetscore
-      },
-      seasons: seasonData,
-      comprehensionAnswers: comprehensionAnswers,
-      treatment: treatmentFilter
-    };
+    const sim = buildSimulationSnapshot(simulation);
 
-    // Format comprehension answers for CSV
-    const comprehensionData = {};
-    const questions =
-      (sim.treatment || treatmentFilter) === 'treat2'
-        ? comprehensionQuestionsTreatment2.english
-        : comprehensionQuestionsTreatment1.english;
+    if (!sim) return;
 
-    questions.forEach((q, index) => {
-      const answer = sim.comprehensionAnswers
-        ? sim.comprehensionAnswers[q.id]
-        : comprehensionAnswers[q.id];
-      comprehensionData[`ComprehensionQ${index + 1}`] = answer || 'Not answered';
-    });
+    // 1) Comprehension columns (always English)
+    const comprehensionCols = buildComprehensionColumns(sim);
 
-    // Generate CSV content (same as export)
+    // 2) Season-wise data
+    const season1 = buildSeasonColumns(sim, 0);
+    const season2 = buildSeasonColumns(sim, 1);
+    const season3 = buildSeasonColumns(sim, 2);
+
+    // 3) CSV row (same structure as handleExportCSV)
     const csvData = [
       {
         Name: sim.farmer.name,
@@ -1341,63 +1279,29 @@ const App = () => {
         Treatment: sim.treatment || treatmentFilter,
         InitialKhetscore: sim.farmer.initialKhetscore,
 
-        // Add comprehension answers
-        ...comprehensionData,
+        ...comprehensionCols,
 
         // Season 1
-        Season1_Practices: sim.seasons[0]?.practiceIds
-          ? sim.seasons[0].practiceIds.join('; ')
-          : '',
-        Season1_Likelihood:
-          sim.seasons[0]?.practiceIds && sim.seasons[0]?.likelihood
-            ? sim.seasons[0].practiceIds
-                .map((id) => {
-                  const likelihood = sim.seasons[0].likelihood[id];
-                  return `${id}_${likelihood?.id || ''}`;
-                })
-                .join('; ')
-            : '',
-        Season1_WeatherShock: sim.seasons[0]?.weatherShock || '',
-        Season1_EndScore: sim.seasons[0]?.endScore || '',
-        Season1_NoWeatherScore:
-          sim.seasons[0]?.noWeatherScore || sim.seasons[0]?.endScore || '',
+        Season1_Practices: season1.practices,
+        Season1_Likelihood: season1.likelihood,
+        Season1_WeatherShock: season1.weather,
+        Season1_EndScore: season1.endScore,
+        Season1_NoWeatherScore: season1.noWeatherScore,
 
         // Season 2
-        Season2_Practices: sim.seasons[1]?.practiceIds
-          ? sim.seasons[1].practiceIds.join('; ')
-          : '',
-        Season2_Likelihood:
-          sim.seasons[1]?.practiceIds && sim.seasons[1]?.likelihood
-            ? sim.seasons[1].practiceIds
-                .map((id) => {
-                  const likelihood = sim.seasons[1].likelihood[id];
-                  return `${id}_${likelihood?.id || ''}`;
-                })
-                .join('; ')
-            : '',
-        Season2_WeatherShock: sim.seasons[1]?.weatherShock || '',
-        Season2_EndScore: sim.seasons[1]?.endScore || '',
-        Season2_NoWeatherScore:
-          sim.seasons[1]?.noWeatherScore || sim.seasons[1]?.endScore || '',
+        Season2_Practices: season2.practices,
+        Season2_Likelihood: season2.likelihood,
+        Season2_WeatherShock: season2.weather,
+        Season2_EndScore: season2.endScore,
+        Season2_NoWeatherScore: season2.noWeatherScore,
 
         // Season 3
-        Season3_Practices: sim.seasons[2]?.practiceIds
-          ? sim.seasons[2].practiceIds.join('; ')
-          : '',
-        Season3_Likelihood:
-          sim.seasons[2]?.practiceIds && sim.seasons[2]?.likelihood
-            ? sim.seasons[2].practiceIds
-                .map((id) => {
-                  const likelihood = sim.seasons[2].likelihood[id];
-                  return `${id}_${likelihood?.id || ''}`;
-                })
-                .join('; ')
-            : '',
-        Season3_WeatherShock: sim.seasons[2]?.weatherShock || '',
-        Season3_EndScore: sim.seasons[2]?.endScore || '',
-        Season3_NoWeatherScore:
-          sim.seasons[2]?.noWeatherScore || sim.seasons[2]?.endScore || ''
-      }
+        Season3_Practices: season3.practices,
+        Season3_Likelihood: season3.likelihood,
+        Season3_WeatherShock: season3.weather,
+        Season3_EndScore: season3.endScore,
+        Season3_NoWeatherScore: season3.noWeatherScore,
+      },
     ];
 
     const csvContent = Papa.unparse(csvData);
@@ -1405,13 +1309,14 @@ const App = () => {
       .toISOString()
       .split('T')[0]}.csv`;
 
+    // === existing Drive logic, unchanged ===
     if (!googleApiLoaded) {
       setDriveUploadStatus({
         success: false,
         message:
           language === 'hindi'
             ? 'Google API ଲୋଡ୍ ହୋଇନାହିଁ। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
-            : 'Google API not loaded. Please try again.'
+            : 'Google API not loaded. Please try again.',
       });
       return;
     }
@@ -1425,25 +1330,25 @@ const App = () => {
         success: true,
         message:
           language === 'hindi'
-            ? 'Google Drive ରେ ସଫଳତାର ସହ ଅପଲୋଡ୍ କରାଯାଇଛି '
-            : 'Successfully uploaded to Google Drive!',
-        link: result.webViewLink
+            ? 'CSV ଫାଇଲ୍ ସଫଳତାର ସହିତ Google Drive କୁ ଅପଲୋଡ୍ ହୋଇଛି।'
+            : 'CSV file successfully uploaded to Google Drive.',
+        link: result?.webViewLink,
       });
 
-      // ✅ Mark this farmer’s simulation as uploaded
+      // Mark this farmer’s simulation as uploaded (if you track that)
       if (sim?.farmer?.id) {
         setUploadedSimulationIds((prev) =>
           prev.includes(sim.farmer.id) ? prev : [...prev, sim.farmer.id]
         );
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Error uploading to Google Drive:', error);
       setDriveUploadStatus({
         success: false,
         message:
           language === 'hindi'
-            ? 'ଅପଲୋଡ୍ ବିଫଳ ହେଲା। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
-            : 'Upload failed. Please try again.'
+            ? 'Google Drive କୁ ଅପଲୋଡ୍ କରିବାରେ ତ୍ରୁଟି ହେଲା।'
+            : 'Error uploading to Google Drive.',
       });
     } finally {
       setUploadingToDrive(false);
@@ -2428,15 +2333,6 @@ const App = () => {
               >
                 {t('continue')} <ChevronRight className="w-5 h-5" />
               </button>
-
-              <button
-                onClick={() => setShowFarmerList(true)}
-                disabled={csvLoading || getFilteredFarmers().length === 0}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                <Users className="w-5 h-5" />
-                {csvLoading ? t('loadingFarmerData') : `${t('viewAllFarmers')} (${getFilteredFarmers().length})`}
-              </button>
             </div>
             
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
@@ -2461,75 +2357,6 @@ const App = () => {
             </div>
           </div>
         </div>
-
-        {/* Farmer List Modal with translations */}
-        {showFarmerList && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-2xl font-bold text-green-800">{t('allFarmers')}</h3>
-                  <button
-                    onClick={() => setShowFarmerList(false)}
-                    className="text-gray-600 hover:text-gray-800 text-2xl font-bold"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6">
-                {getFilteredFarmers().length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600">No farmer data available</p>
-                  </div>
-                ) : (
-                  <table className="w-full">
-                    <thead className="bg-gray-100 sticky top-0">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('farmerID')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('name')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('khetscore')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('treatment')}</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">{t('action')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {getFilteredFarmers().map((farmer, idx) => (
-                        <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-800">{farmer.farmerID || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-800">{farmer.Name || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm font-semibold text-green-700">{farmer.Khetscore || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{farmer.treatment || 'N/A'}</td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => {
-                                handleSelectFarmer(farmer);
-                                setShowFarmerList(false);
-                              }}
-                              className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
-                            >
-                              {t('select')}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-              
-              <div className="p-6 border-t border-gray-200">
-                <button
-                  onClick={() => setShowFarmerList(false)}
-                  className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-                >
-                  {t('close')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -3478,13 +3305,6 @@ const App = () => {
             </div>
             
             <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 mt-8">
-              <button
-                onClick={() => handleExportCSV()}
-                className="flex-1 min-w-[160px] bg-blue-600 text-white px-3 py-4 rounded-md text-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Download className="w-4 h-4" /> {t('exportCSV')}
-              </button>
-
               <button
                 onClick={() => handleUploadToDrive()}
                 disabled={
