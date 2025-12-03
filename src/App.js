@@ -64,7 +64,6 @@ const translations = {
     welcome: "Welcome",
     logout: "Logout",
     view: "View",
-    export: "Export",
     delete: "Delete",
     scoreChange: "Score Change",
     backToSelection: "Back to Selection",
@@ -75,13 +74,10 @@ const translations = {
     farmerID: "Farmer ID",
     continue: "Continue",
     backToDashboard: "Back to Dashboard",
-    viewAllFarmers: "View All Farmers",
     availableFarmers: "Available Farmers",
-    farmerNotFound: "Farmer ID not found",
-    farmerAlreadySimulated: "This farmer already has a completed simulation. Please select another farmer.",
+    farmerNotFound: "Farmer ID not found. Enter correct ID",
+    farmerAlreadySimulated: "This farmer already has a completed simulation. Please enter another farmer ID.",
     loadingFarmerData: "Loading farmer data...",
-    allFarmers: "All Farmers",
-    name: "Name",
     khetscore: "Khetscore",
     action: "Action",
     select: "Select",
@@ -127,7 +123,6 @@ const translations = {
     noWeather: "No Weather",
     practicesSelected: "Practices Selected",
     scoreProgression: "Score Progression",
-    exportCSV: "Export to CSV",
     saveReturn: "Save & Return to Dashboard",
     uploadToDrive: "Upload to Drive",
     noWeatherScore: "No Weather",
@@ -168,7 +163,6 @@ const translations = {
     welcome: "ସ୍ୱାଗତ",
     logout: "ଲଗ୍ ଆଉଟ୍",
     view: "ଦେଖନ୍ତୁ",
-    export: "ନିର୍ୟାତ",
     delete: "ମିଟାନ୍ତୁ",
     scoreChange: "ସ୍କୋର ପରିବର୍ତ୍ତନ",
     backToSelection: "ଚୟନକୁ ଫେରନ୍ତୁ",
@@ -179,12 +173,10 @@ const translations = {
     farmerID: "କୃଷକ ID",
     continue: "ଚାଲୁ ରଖନ୍ତୁ",
     backToDashboard: "ଡ୍ୟାଶବୋର୍ଡକୁ ଫେରନ୍ତୁ",
-    viewAllFarmers: "ସମସ୍ତ କୃଷକମାନେ ଦେଖନ୍ତୁ",
-    availableFarmers: "ଉପଲବ୍ଧ କୃଷକମାନେ",
-    farmerNotFound: "କୃଷକ ID ମିଳିଲା ନାହିଁ",
+    farmerNotFound: "କୃଷକ ID ମିଳିଲା ନାହିଁ। ଦୟାକରି ସଠିକ୍ ID ପ୍ରବେଶ କରନ୍ତୁ",
     farmerAlreadySimulated: "ଏହି କୃଷକଙ୍କର ସିମୁଲେସନ ପୂର୍ବରୁ ସମାପ୍ତ ହୋଇଛି। ଦୟାକରି ଅନ୍ୟ କୃଷକ ID ପ୍ରବେଶ କରନ୍ତୁ",
     loadingFarmerData: "କୃଷକ ତଥ୍ୟ ଲୋଡ୍ ହେଉଛି...",
-    allFarmers: "ସମସ୍ତ କୃଷକ",
+    availableFarmers: "ଉପଲବ୍ଧ କୃଷକମାନେ",
     name: "ନାମ",
     khetscore: "ଖେତସ୍କୋର",
     action: "କାର୍ଯ୍ୟ",
@@ -231,7 +223,6 @@ const translations = {
     noWeather: "ବିନା ଋତୁ",
     practicesSelected: "ଚୟନିତ ପ୍ରଥାମାନେ",
     scoreProgression: "ସ୍କୋର ପ୍ରଗତି",
-    exportCSV: "CSV ରେ ନିର୍ୟାତ କରନ୍ତୁ",
     saveReturn: "ସଞ୍ଚୟ କରନ୍ତୁ ଏବଂ ଡ୍ୟାଶବୋର୍ଡକୁ ଫେରନ୍ତୁ",
     uploadToDrive: "ଡ୍ରାଇଭ୍‌କୁ ଅପଲୋଡ୍ କରନ୍ତୁ",
     noWeatherScore: "ବିନା କ୍ଷୟକ୍ଷତି ଖେତସ୍କୋର",
@@ -545,12 +536,13 @@ const App = () => {
   const [registerForm, setRegisterForm] = useState({ username: '', password: '', name: '', organization: '' });
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false); 
   const [authError, setAuthError] = useState('');
   const [screen, setScreen] = useState('selection'); 
   const [treatmentFilter, setTreatmentFilter] = useState(null); 
   const [farmersData, setFarmersData] = useState([]);
-  const [csvLoading, setCsvLoading] = useState(true);
-  const [csvError, setCsvError] = useState('');
+  const [farmersLoading, setFarmersLoading] = useState(true);
+  const [farmersError, setFarmersError] = useState('');
   const [currentFarmer, setCurrentFarmer] = useState(null);
   const [farmerID, setFarmerID] = useState('');
   const [currentSeason, setCurrentSeason] = useState(1);
@@ -612,8 +604,8 @@ const App = () => {
   // Load farmer data from Supabase instead of CSV
   useEffect(() => {
     const loadFarmers = async () => {
-      setCsvLoading(true);
-      setCsvError('');
+      setFarmersLoading(true);
+      setFarmersError('');
 
       const { data, error } = await supabase
         .from('farmers')
@@ -621,8 +613,8 @@ const App = () => {
 
       if (error) {
         console.error('Error loading farmers from Supabase:', error);
-        setCsvError('Error loading farmer data');
-        setCsvLoading(false);
+        setFarmersError('Error loading farmer data');
+        setFarmersLoading(false);
         return;
       }
 
@@ -639,7 +631,7 @@ const App = () => {
       }));
 
       setFarmersData(normalized);
-      setCsvLoading(false);
+      setFarmersLoading(false);
     };
 
     // Check for existing session in localStorage
@@ -798,20 +790,8 @@ const App = () => {
       }
     }
 
-    // Clear all simulation data (existing code)
-    setCurrentFarmer(null);
-    setCurrentSeason(1);
-    setSelectedPractices([]);
-    setPracticesWithLikelihood({});
-    setWeatherShock(null);
-    setSeasonData([]);
-    setLikelihoodAnswers({});
-    setSessionHistory({});
-    setFarmerID('');
-    setNoWeatherKhetscore(null);
-    setComprehensionAnswers({});
-    setIsViewingExisting(false); // Reset flag
-    setScreen('dashboard');
+    // Clear all simulation data and return to dashboard
+    resetSimulationState();
   };
 
   // Filter simulations based on search query
@@ -831,9 +811,8 @@ const App = () => {
     );
   });
 
-  // Handle home click
-  const handleHomeClick = () => {
-    // Clear ALL simulation data and reset to dashboard
+  // Helper: fully reset simulation-related state and go to dashboard
+  const resetSimulationState = (options = { resetTreatmentFilter: false }) => {
     setCurrentFarmer(null);
     setCurrentSeason(1);
     setSelectedPractices([]);
@@ -847,30 +826,26 @@ const App = () => {
     setIsViewingExisting(false);
     setCurrentPractices(practices);
     setComprehensionAnswers({});
-    setTreatmentFilter(null); // Reset treatment filter
-    setScreen('dashboard');
     setError('');
+
+    if (options.resetTreatmentFilter) {
+      setTreatmentFilter(null);
+    }
+
+    setScreen('dashboard');
+  };
+
+  // Handle home click
+  const handleHomeClick = () => {
+    // Clear ALL simulation data and reset to dashboard
+    resetSimulationState({ resetTreatmentFilter: true });
   };
 
   // Handle logo click
   const handleLogoClick = () => {
     // Clear ALL simulation data and return to dashboard
-    setCurrentFarmer(null);
-    setCurrentSeason(1);
-    setSelectedPractices([]);
-    setPracticesWithLikelihood({});
-    setWeatherShock(null);
-    setSeasonData([]);
-    setLikelihoodAnswers({});
-    setSessionHistory({});
-    setFarmerID('');
-    setNoWeatherKhetscore(null);
-    setIsViewingExisting(false);
-    setCurrentPractices(practices);
-    setComprehensionAnswers({});
-    // Don't reset treatment filter when clicking logo, just go to dashboard
-    setScreen('dashboard');
-    setError('');
+    // Keep treatment filter as-is when clicking logo
+    resetSimulationState({ resetTreatmentFilter: false });
   };
 
   // Handle login with custom authentication (with password verification)
@@ -913,7 +888,18 @@ const App = () => {
 
       setCurrentUser(userWithoutPassword);
       setIsLoggedIn(true);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+
+      // 🔐 Remember me handling
+      if (rememberMe) {
+        // Persist session across refresh / browser reopen
+        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        // Do NOT persist this session
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('rememberMe');
+      }
+
       setAuthScreen(null);
       setScreen('selection');
       await loadUserData(data.id);
@@ -1020,37 +1006,51 @@ const App = () => {
     setAllSimulations([]);
   };
 
-  // Handle farmer lookup
   const handleFarmerLookup = () => {
-    // Check if farmer already has completed simulation
-    const existingSimulation = allSimulations.find(sim => sim.farmer.id === farmerID);
-    if (existingSimulation) {
+    // 1️⃣ Basic existence check
+    const farmerFromDb = farmersData.find(f => f.farmerID === farmerID);
+
+    if (!farmerFromDb) {
+      setError('farmerNotFound');
+      return;
+    }
+
+    // 2️⃣ Check if already simulated
+    if (farmerFromDb.sim_completed) {
       setError('farmerAlreadySimulated');
       return;
     }
 
+    // 3️⃣ Respect treatment filter and "not completed" filter
     const filteredFarmers = getFilteredFarmers();
     const farmer = filteredFarmers.find(f => f.farmerID === farmerID);
-    if (farmer) {
-      const initialScore = roundScore(farmer.Khetscore);
-      setCurrentFarmer({
-        ...farmer,
-        currentKhetscore: initialScore,
-        initialKhetscore: initialScore
-      });
-      setNoWeatherKhetscore(initialScore); // Initialize noWeatherKhetscore
-      setError('');
-      setCurrentSeason(1);
-      setSeasonData([]);
-      setSessionHistory({
-        season1: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
-        season2: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
-        season3: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} }
-      });
-      setScreen(treatmentFilter === 'treat1' ? 'info-path1' : 'info-path2');
-    } else {
-      setError('simulationCompleted');
+
+    if (!farmer) {
+      // Exists in DB but not available under current filter
+      setError('farmerNotFound');
+      return;
     }
+
+    // 4️⃣ Start simulation with this farmer
+    const initialScore = roundScore(farmer.Khetscore);
+
+    setCurrentFarmer({
+      ...farmer,
+      currentKhetscore: initialScore,
+      initialKhetscore: initialScore,
+    });
+
+    setNoWeatherKhetscore(initialScore);
+    setError('');
+    setCurrentSeason(1);
+    setSeasonData([]);
+    setSessionHistory({
+      season1: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
+      season2: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
+      season3: { practices: [], weather: null, score: initialScore, noWeatherScore: initialScore, likelihood: {} },
+    });
+
+    setScreen(treatmentFilter === 'treat1' ? 'info-path1' : 'info-path2');
   };
 
   // Handle weather continue
@@ -1755,6 +1755,7 @@ const App = () => {
           </div>
           
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
               <input
@@ -1767,6 +1768,7 @@ const App = () => {
               />
             </div>
             
+            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
               <div className="relative">
@@ -1791,7 +1793,21 @@ const App = () => {
                 </button>
               </div>
             </div>
-            
+
+            {/* Remember Me (Centered) */}
+            <div className="flex justify-center mt-2">
+              <label className="flex items-center text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                />
+                <span className="ml-2">Remember me</span>
+              </label>
+            </div>
+
+            {/* Error message */}
             {authError && (
               <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
                 <AlertCircle className="w-5 h-5" />
@@ -1799,10 +1815,11 @@ const App = () => {
               </div>
             )}
             
+            {/* Submit */}
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {authLoading ? 'Logging in...' : 'Login'}
             </button>
@@ -2083,36 +2100,57 @@ const App = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Total Simulations – now from DB-backed farmersData */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{t('totalSimulations')}</h3>
                 <BarChart3 className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-4xl font-bold text-green-700">
-                {allSimulations.filter(sim => {
-                  const farmer = farmersData.find(f => f.farmerID === sim.farmer.id);
-                  return treatmentFilter && farmer ? farmer.treatment === treatmentFilter : true;
-                }).length}
+                {
+                  farmersData.filter(farmer => {
+                    // Only count farmers whose simulation is completed in DB
+                    if (!farmer.sim_completed) return false;
+
+                    // If a treatment is selected, only count that treatment
+                    if (treatmentFilter) {
+                      return farmer.treatment === treatmentFilter;
+                    }
+
+                    // No treatment filter → count all completed farmers
+                    return true;
+                  }).length
+                }
               </p>
-              <p className="text-xs text-gray-500 mt-2">{t('treatment')}: {treatmentFilter}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('treatment')}: {treatmentFilter || 'All'}
+              </p>
             </div>
 
+            {/* Farmers Tracked – also from DB-backed farmersData */}
             <div className="bg-white p-6 rounded-lg shadow-md">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{t('farmersTracked')}</h3>
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
               <p className="text-4xl font-bold text-blue-700">
-                {new Set(
-                  allSimulations
-                    .filter(sim => {
-                      const farmer = farmersData.find(f => f.farmerID === sim.farmer.id);
-                      return treatmentFilter && farmer ? farmer.treatment === treatmentFilter : true;
-                    })
-                    .map(s => s.farmer.id)
-                ).size}
+                {
+                  farmersData.filter(farmer => {
+                    // Only farmers that are marked completed in DB
+                    if (!farmer.sim_completed) return false;
+
+                    // Respect treatment filter if set
+                    if (treatmentFilter) {
+                      return farmer.treatment === treatmentFilter;
+                    }
+
+                    return true;
+                  }).length
+                }
               </p>
-              <p className="text-xs text-gray-500 mt-2">{t('treatment')}: {treatmentFilter}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {t('treatment')}: {treatmentFilter || 'All'}
+              </p>
             </div>
           </div>
 
@@ -2336,13 +2374,13 @@ const App = () => {
             </div>
             
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              {csvLoading ? (
+              {farmersLoading ? (
                 <p className="text-sm text-gray-600">
                   <strong>{t('loadingFarmerData')}</strong>
                 </p>
-              ) : csvError ? (
+              ) : farmersError ? (
                 <p className="text-sm text-red-600">
-                  <strong>Error:</strong> {csvError}
+                  <strong>Error:</strong> {farmersError}
                 </p>
               ) : (
                 <div className="space-y-2">
