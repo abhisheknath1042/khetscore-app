@@ -676,6 +676,36 @@ const App = () => {
     loadFarmers();
   }, []);
 
+  // Prevent pull-to-refresh on mobile
+  useEffect(() => {
+    let startY = 0;
+
+    function onTouchStart(e) {
+      if (window.scrollY === 0) {
+        startY = e.touches[0].clientY;
+      } else {
+        startY = -1;
+      }
+    }
+
+    function onTouchMove(e) {
+      if (startY < 0) return;
+      const currentY = e.touches[0].clientY;
+      if (currentY - startY > 10) {
+        e.preventDefault();
+      }
+    }
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart, { passive: true });
+      window.removeEventListener('touchmove', onTouchMove, { passive: false });
+    };
+  }, []);
+
+
   // Load user data
   const loadUserData = async (userId) => {
     try {
