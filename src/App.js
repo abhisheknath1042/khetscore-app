@@ -61,7 +61,7 @@ const translations = {
     beginSimulation: "Begin Simulation",
     recentSimulations: "Recent Simulations",
     searchPlaceholder: "Search by farmer name or ID...",
-    welcome: "Welcome",
+    welcome: "Welcome,",
     logout: "Logout",
     view: "View",
     delete: "Delete",
@@ -160,7 +160,7 @@ const translations = {
     beginSimulation: "ସିମୁଲେସନ୍ ଆରମ୍ଭ କରନ୍ତୁ",
     recentSimulations: "ସମ୍ପ୍ରତି ସିମୁଲେସନ୍",
     searchPlaceholder: "କୃଷକଙ୍କର ନାମ କିମ୍ବା ID ଦ୍ୱାରା ସନ୍ଧାନ କରନ୍ତୁ...",
-    welcome: "ସ୍ୱାଗତ",
+    welcome: "ସ୍ୱାଗତ,",
     logout: "ଲଗ୍ ଆଉଟ୍",
     view: "ଦେଖନ୍ତୁ",
     delete: "ମିଟାନ୍ତୁ",
@@ -567,6 +567,8 @@ const App = () => {
   const [driveUploadStatus, setDriveUploadStatus] = useState(null); // { success: boolean, message: string, link?: string }
   const [comprehensionAnswers, setComprehensionAnswers] = useState({});
   const [uploadedSimulationIds, setUploadedSimulationIds] = useState([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [refreshingData, setRefreshingData] = useState(false);
 
   // Inside App component, after state declarations
   const { t } = useTranslation(language);
@@ -603,42 +605,15 @@ const App = () => {
 
   // Load farmer data from Supabase instead of CSV
   useEffect(() => {
-    const loadFarmers = async () => {
-      setFarmersLoading(true);
-      setFarmersError('');
+    let isMounted = true;
 
-      const { data, error } = await supabase
-        .from('farmers')
-        .select('farmer_id, name, khetscore, treatment, sim_completed, completed_at');
-
-      if (error) {
-        console.error('Error loading farmers from Supabase:', error);
-        setFarmersError('Error loading farmer data');
-        setFarmersLoading(false);
-        return;
-      }
-
-      // 🔴 CASE SENSITIVE MAPPING:
-      // Supabase columns (farmer_id, name, khetscore, treatment)
-      //  → CSV-style keys used everywhere in your app (farmerID, Name, Khetscore, treatment)
-      const normalized = (data || []).map(row => ({
-        farmerID: row.farmer_id,
-        Name: row.name,
-        Khetscore: row.khetscore,
-        treatment: row.treatment,
-        sim_completed: row.sim_completed ?? false,
-        completed_at: row.completed_at || null,
-      }));
-
-      setFarmersData(normalized);
-      setFarmersLoading(false);
-    };
-
-    // Check for existing session in localStorage
-    const checkAuth = async () => {
+    const initializeApp = async () => {
       try {
+        // Step 1: Check authentication first
+        setAuthLoading(true);
         const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
+        
+        if (savedUser && isMounted) {
           const user = JSON.parse(savedUser);
           
           // Verify user still exists in database
@@ -648,7 +623,7 @@ const App = () => {
             .eq('id', user.id)
             .single();
           
-          if (!error && data) {
+          if (!error && data && isMounted) {
             const userWithoutPassword = {
               id: data.id,
               username: data.username,
@@ -659,58 +634,106 @@ const App = () => {
             setCurrentUser(userWithoutPassword);
             setIsLoggedIn(true);
             setAuthScreen('');
+            
+            // Load user data after successful auth
             await loadUserData(data.id);
           } else {
             // User no longer exists, clear localStorage
             localStorage.removeItem('currentUser');
           }
         }
-        setAuthLoading(false);
+        
+        if (isMounted) {
+          setAuthLoading(false);
+        }
+
+        // Step 2: Load farmers data (independent of auth status)
+        setFarmersLoading(true);
+        const { data: farmersDataResult, error: farmersError } = await supabase
+          .from('farmers')
+          .select('*');
+
+        if (farmersError) {
+          console.error('Error loading farmers from Supabase:', farmersError);
+          if (isMounted) {
+            setFarmersError('Error loading farmer data');
+          }
+        } else if (isMounted) {
+          const normalized = (farmersDataResult || []).map(row => ({
+            farmerID: row.farmer_id,
+            Name: row.name,
+            Khetscore: row.khetscore,
+            treatment: row.treatment,
+            sim_completed: row.sim_completed ?? false,
+            completed_at: row.completed_at || null,
+          }));
+          setFarmersData(normalized);
+        }
+        
+        if (isMounted) {
+          setFarmersLoading(false);
+        }
       } catch (error) {
-        console.error('Auth check error:', error);
-        setAuthLoading(false);
+        console.error('Initialization error:', error);
+        if (isMounted) {
+          setAuthLoading(false);
+          setFarmersLoading(false);
+        }
       }
     };
 
-    checkAuth();
-    loadFarmers();
+    initializeApp();
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // handle click usermenu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserMenu]);
 
   // Prevent pull-to-refresh on mobile
-  useEffect(() => {
-    let startY = 0;
+  // useEffect(() => {
+  //   let startY = 0;
 
-    function onTouchStart(e) {
-      if (window.scrollY === 0) {
-        startY = e.touches[0].clientY;
-      } else {
-        startY = -1;
-      }
-    }
+  //   function onTouchStart(e) {
+  //     startY = window.scrollY === 0 ? e.touches[0].clientY : -1;
+  //   }
 
-    function onTouchMove(e) {
-      if (startY < 0) return;
-      const currentY = e.touches[0].clientY;
-      if (currentY - startY > 10) {
-        e.preventDefault();
-      }
-    }
+  //   function onTouchMove(e) {
+  //     if (startY < 0) return;
 
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
+  //     const currentY = e.touches[0].clientY;
 
-    return () => {
-      window.removeEventListener('touchstart', onTouchStart, { passive: true });
-      window.removeEventListener('touchmove', onTouchMove, { passive: false });
-    };
-  }, []);
+  //     if (currentY - startY > 10 && e.cancelable) {
+  //       e.preventDefault(); // ✅ safe now
+  //     }
+  //   }
 
+  //   window.addEventListener('touchstart', onTouchStart, { passive: true });
+  //   window.addEventListener('touchmove', onTouchMove, { passive: false });
+
+  //   return () => {
+  //     window.removeEventListener('touchstart', onTouchStart);
+  //     window.removeEventListener('touchmove', onTouchMove);
+  //   };
+  // }, []);
 
   // Load user data
   const loadUserData = async (userId) => {
     try {
       // Load simulations from localStorage
-      const savedSims = localStorage.getItem(`simulations_${userId}`);
+      const savedSims = localStorage.getItem('simulations_' + userId);
       if (savedSims) {
         const parsed = JSON.parse(savedSims);
 
@@ -724,6 +747,36 @@ const App = () => {
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+    }
+  };
+
+  // refresh farmer data
+  const refreshFarmersData = async () => {
+    setRefreshingData(true);
+    try {
+      const { data, error } = await supabase
+        .from('farmers')
+        .select('farmer_id, name, khetscore, treatment, sim_completed, completed_at');
+
+      if (error) {
+        console.error('Error refreshing farmers data:', error);
+        return;
+      }
+
+      const normalized = (data || []).map(row => ({
+        farmerID: row.farmer_id,
+        Name: row.name,
+        Khetscore: row.khetscore,
+        treatment: row.treatment,
+        sim_completed: row.sim_completed ?? false,
+        completed_at: row.completed_at || null,
+      }));
+
+      setFarmersData(normalized);
+    } catch (error) {
+      console.error('Error refreshing farmers data:', error);
+    } finally {
+      setRefreshingData(false);
     }
   };
 
@@ -868,7 +921,7 @@ const App = () => {
   // Handle home click
   const handleHomeClick = () => {
     // Clear ALL simulation data and reset to dashboard
-    resetSimulationState({ resetTreatmentFilter: true });
+    resetSimulationState({ resetTreatmentFilter: false });
   };
 
   // Handle logo click
@@ -1037,6 +1090,13 @@ const App = () => {
   };
 
   const handleFarmerLookup = () => {
+    // Trim whitespace from input
+    const trimmedID = farmerID.trim();
+    if (!trimmedID) {
+      setError('farmerNotFound');
+      return;
+    }
+
     // 1️⃣ Basic existence check
     const farmerFromDb = farmersData.find(f => f.farmerID === farmerID);
 
@@ -1260,9 +1320,9 @@ const App = () => {
 
     // Weather shock: always mapped to English
     const weather = translateToEnglish(
-      season.weatherShockEnglish || season.weatherShock,
+      season.weatherShockEnglish || season.weatherShock || 'None',
       'weather'
-    );
+    ) || 'None';
 
     return {
       practices,
@@ -2029,9 +2089,10 @@ const App = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full mb-8">
           <button
-            onClick={() => {
+            onClick={async () => {
               setTreatmentFilter('treat1');
               setCurrentPractices(practices);
+              await refreshFarmersData();
               setScreen('dashboard');
             }}
             className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
@@ -2045,9 +2106,10 @@ const App = () => {
           </button>
           
           <button
-            onClick={() => {
+            onClick={async () => {
               setTreatmentFilter('treat2');
               setCurrentPractices(practicesTreatment2);
+              await refreshFarmersData();
               setScreen('dashboard');
             }}
             className="bg-white p-8 rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 group"
@@ -2104,20 +2166,48 @@ const App = () => {
                   <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   {t('backToSelection')}
                 </button>
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs sm:text-sm text-gray-600">{t('welcome')},</p>
-                  <p className="text-sm sm:text-base font-semibold text-gray-800">{currentUser.full_name}</p>
-                </div>
                 <div className="hidden sm:block">
                   <LanguageToggle language={language} setLanguage={setLanguage} />
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-red-600 transition-colors"
-                >
-                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-sm sm:text-base">{t('logout')}</span>
-                </button>
+                {/* User Menu Dropdown */}
+                <div className="relative user-menu-container">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      {currentUser.full_name.charAt(0).toUpperCase()}
+                    </div>
+                    <svg 
+                      className={`w-4 h-4 text-gray-600 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-3 border-b border-gray-200">
+                        <p className="text-sm text-gray-600">{t('welcome')}</p>
+                        <p className="text-base font-semibold text-gray-800">{currentUser.full_name}</p>
+                        {currentUser.organization && (
+                          <p className="text-xs text-gray-500">{currentUser.organization}</p>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-red-50 transition-colors text-red-600"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span className="font-medium">{t('logout')}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -2125,8 +2215,28 @@ const App = () => {
 
         <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           <div className="mb-6 sm:mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">{t('dashboard')}</h2>
-            <p className="text-gray-600">{t('manageActivities')}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">{t('dashboard')}</h2>
+                <p className="text-gray-600">{t('manageActivities')}</p>
+              </div>
+              <button
+                onClick={refreshFarmersData}
+                disabled={refreshingData}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                title="Refresh data from database"
+              >
+                <svg 
+                  className={`w-5 h-5 ${refreshingData ? 'animate-spin' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {refreshingData ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -2141,12 +2251,12 @@ const App = () => {
                   farmersData.filter(farmer => {
                     // Only count farmers whose simulation is completed in DB
                     if (!farmer.sim_completed) return false;
-
+                    
                     // If a treatment is selected, only count that treatment
                     if (treatmentFilter) {
                       return farmer.treatment === treatmentFilter;
                     }
-
+                    
                     // No treatment filter → count all completed farmers
                     return true;
                   }).length
@@ -2168,12 +2278,12 @@ const App = () => {
                   farmersData.filter(farmer => {
                     // Only farmers that are marked completed in DB
                     if (!farmer.sim_completed) return false;
-
+                    
                     // Respect treatment filter if set
                     if (treatmentFilter) {
                       return farmer.treatment === treatmentFilter;
                     }
-
+                    
                     return true;
                   }).length
                 }
@@ -2550,6 +2660,7 @@ const App = () => {
                 onClick={() => {
                   setScreen(treatmentFilter === 'treat1' ? 'info-path1' : 'info-path2');
                   setError('');
+                  setComprehensionAnswers({}); // Optional: clear answers when going back
                 }}
                 className="flex-1 bg-gray-200 text-gray-700 px-6 py-4 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all"
               >
@@ -2755,6 +2866,10 @@ const App = () => {
       
       const practiceBonus = practiceIds.reduce((sum, id) => {
         const practice = localizedPractices.find(p => p.id === id);
+        if (!practice) {
+          console.error(`Practice with id ${id} not found`);
+          return sum;
+        }
         const likelihoodId = practicesWithLikelihood[id].likelihoodId;
         if (likelihoodId === 3 || likelihoodId === 4) {
           return sum + practice.weight;
@@ -2951,10 +3066,10 @@ const App = () => {
       if (!weatherShock) return '';
 
       // For English UI, just use whatever is stored
-      if (language !== 'hindi') return weatherShock.name;
+      if (language !== 'hindi') return weatherShock.name || weatherShock.weather || 'None';
 
       // For Odia UI, map English names → Odia; if already Odia, just return it
-      const englishName = weatherShock.weatherShockEnglish || weatherShock.name;
+      const englishName = weatherShock.weatherShockEnglish || weatherShock.name || '';
 
       const shockMap = {
         'Flood': 'ବନ୍ୟା',
