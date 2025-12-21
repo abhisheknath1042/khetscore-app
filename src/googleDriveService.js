@@ -53,23 +53,49 @@ export const loadGoogleApi = () => {
   });
 };
 
-// Request access token
+// Request access token with better error handling
 const getAccessToken = () => {
   return new Promise((resolve, reject) => {
-    tokenClient.callback = (response) => {
-      if (response.error) {
-        reject(response);
+    try {
+      tokenClient.callback = (response) => {
+        if (response.error) {
+          console.error('OAuth error:', response.error);
+          reject(new Error(response.error_description || response.error));
+        } else {
+          resolve(response.access_token);
+        }
+      };
+      
+      const currentToken = window.gapi.client.getToken();
+      
+      if (currentToken === null) {
+        // First time - request consent
+        tokenClient.requestAccessToken({ 
+          prompt: 'consent',
+          error_callback: (error) => {
+            console.error('Token request failed:', error);
+            reject(new Error('Authentication failed. Please try again.'));
+          }
+        });
       } else {
-        resolve(response.access_token);
+        // Already authenticated - refresh token
+        tokenClient.requestAccessToken({ 
+          prompt: '',
+          error_callback: (error) => {
+            console.error('Token refresh failed:', error);
+            // Try again with consent
+            tokenClient.requestAccessToken({ 
+              prompt: 'consent',
+              error_callback: (error) => {
+                reject(new Error('Authentication failed. Please try again.'));
+              }
+            });
+          }
+        });
       }
-    };
-    
-    if (window.gapi.client.getToken() === null) {
-      // Prompt user to select account and consent
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    } else {
-      // Skip consent for existing session
-      tokenClient.requestAccessToken({ prompt: '' });
+    } catch (error) {
+      console.error('Unexpected error in getAccessToken:', error);
+      reject(new Error('Failed to initialize authentication'));
     }
   });
 };
