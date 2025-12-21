@@ -149,6 +149,11 @@ const translations = {
     watchVideo: "Watch Video",
     simulationInfo: "Simulation Information",
     continueToKhetscore: "Continue to KhetScore",
+    refresh: "Refresh",
+    refreshing: "Refreshing...",
+    refreshSuccess: "Data refreshed successfully",
+    refreshError: "Failed to refresh data",
+    checkConnection: "Please check your connection",
   },
   hindi: {
     // Dashboard
@@ -249,6 +254,11 @@ const translations = {
     watchVideo: "ଭିଡିଓ ଦେଖନ୍ତୁ",
     simulationInfo: "ସିମୁଲେସନ୍ ସୂଚନା",
     continueToKhetscore: "KhetScore କୁ ଜାରି ରଖନ୍ତୁ",
+    refresh: "ରିଫ୍ରେଶ୍",
+    refreshing: "ରିଫ୍ରେଶ୍ ହେଉଛି...",
+    refreshSuccess: "ଡାଟା ସଫଳତାର ସହ ରିଫ୍ରେସ୍ ହେଲା",
+    refreshError: "ଡାଟା ରିଫ୍ରେଶ୍ କରିବାରେ ବିଫଳ ହେଲା",
+    checkConnection: "ଦୟାକରି ଆପଣଙ୍କର ସଂଯୋଗ ଯାଞ୍ଚ କରନ୍ତୁ।­",
   }
 };
 
@@ -488,7 +498,7 @@ const LanguageToggle = ({ language, setLanguage }) => {
 }
 
 // Upload Status Modal Component
-const UploadStatusModal = ({ status, onClose, language }) => {
+const UploadStatusModal = ({ status, onClose, onRetry, language }) => {
   if (!status) return null;
   
   return (
@@ -514,13 +524,34 @@ const UploadStatusModal = ({ status, onClose, language }) => {
         </div>
         
         <p className="text-gray-600 mb-4">{status.message}</p>
-            
-        <button
-          onClick={onClose}
-          className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          {language === 'hindi' ? 'ବନ୍ଦ କରନ୍ତୁ' : 'Close'}
-        </button>
+        
+        {status.link && (
+          <a 
+            href={status.link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:underline text-sm mb-4 block"
+          >
+            {language === 'hindi' ? 'ଡ୍ରାଇଭରେ ଦେଖନ୍ତୁ' : 'View in Drive'}
+          </a>
+        )}
+        
+        <div className="flex gap-2">
+          {!status.success && onRetry && (
+            <button
+              onClick={onRetry}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {language === 'hindi' ? 'ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ' : 'Retry'}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className={`${!status.success && onRetry ? 'flex-1' : 'w-full'} bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors`}
+          >
+            {language === 'hindi' ? 'ବନ୍ଦ କରନ୍ତୁ' : 'Close'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -569,6 +600,8 @@ const App = () => {
   const [uploadedSimulationIds, setUploadedSimulationIds] = useState([]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [refreshingData, setRefreshingData] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
 
   // Inside App component, after state declarations
   const { t } = useTranslation(language);
@@ -692,42 +725,24 @@ const App = () => {
 
   // handle click usermenu
   useEffect(() => {
+    if (!showUserMenu) return;
+
     const handleClickOutside = (event) => {
-      if (showUserMenu && !event.target.closest('.user-menu-container')) {
+      if (!event.target.closest('.user-menu-container')) {
         setShowUserMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    // Add slight delay to prevent immediate closing
+    const timeoutId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showUserMenu]);
-
-  // Prevent pull-to-refresh on mobile
-  // useEffect(() => {
-  //   let startY = 0;
-
-  //   function onTouchStart(e) {
-  //     startY = window.scrollY === 0 ? e.touches[0].clientY : -1;
-  //   }
-
-  //   function onTouchMove(e) {
-  //     if (startY < 0) return;
-
-  //     const currentY = e.touches[0].clientY;
-
-  //     if (currentY - startY > 10 && e.cancelable) {
-  //       e.preventDefault(); // ✅ safe now
-  //     }
-  //   }
-
-  //   window.addEventListener('touchstart', onTouchStart, { passive: true });
-  //   window.addEventListener('touchmove', onTouchMove, { passive: false });
-
-  //   return () => {
-  //     window.removeEventListener('touchstart', onTouchStart);
-  //     window.removeEventListener('touchmove', onTouchMove);
-  //   };
-  // }, []);
 
   // Load user data
   const loadUserData = async (userId) => {
@@ -752,17 +767,41 @@ const App = () => {
 
   // refresh farmer data
   const refreshFarmersData = async () => {
+    // Prevent multiple simultaneous refresh attempts
+    if (refreshingData) return;
+    
     setRefreshingData(true);
+    setRefreshError(''); // Clear any previous error messages
+    
     try {
       const { data, error } = await supabase
         .from('farmers')
         .select('farmer_id, name, khetscore, treatment, sim_completed, completed_at');
 
+      // Check for Supabase errors
       if (error) {
         console.error('Error refreshing farmers data:', error);
+        setRefreshError(
+          language === 'hindi' 
+            ? 'ଡାଟା ରିଫ୍ରେଶ୍ କରିବାରେ ବିଫଳ ହେଲା। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+            : 'Failed to refresh data. Please try again.'
+        );
         return;
       }
 
+      // Check if data is empty (might indicate connection issues)
+      if (!data || data.length === 0) {
+        console.warn('No farmers data received');
+        setRefreshError(
+          language === 'hindi'
+            ? 'କୌଣସି ଚାଷୀ ତଥ୍ୟ ମିଳିଲା ନାହିଁ।'
+            : 'No farmer data found.'
+        );
+        setFarmersData([]);
+        return;
+      }
+
+      // Normalize the data
       const normalized = (data || []).map(row => ({
         farmerID: row.farmer_id,
         Name: row.name,
@@ -773,8 +812,21 @@ const App = () => {
       }));
 
       setFarmersData(normalized);
+      
+      // Success feedback (optional - auto-clear after 3 seconds)
+      setRefreshSuccess(true);
+      setTimeout(() => {
+        setRefreshSuccess(false);
+      }, 3000);
+      
     } catch (error) {
-      console.error('Error refreshing farmers data:', error);
+      // Handle unexpected errors (network issues, etc.)
+      console.error('Unexpected error refreshing farmers data:', error);
+      setRefreshError(
+        language === 'hindi'
+          ? 'ଅପ୍ରତ୍ୟାଶିତ ତ୍ରୁଟି ଦେଖାଦେଲା। ଦୟାକରି ଆପଣଙ୍କର ସଂଯୋଗ ଯାଞ୍ଚ କରନ୍ତୁ।'
+          : 'Unexpected error occurred. Please check your connection.'
+      );
     } finally {
       setRefreshingData(false);
     }
@@ -1351,7 +1403,26 @@ const App = () => {
   const handleUploadToDrive = async (simulation = null) => {
     const sim = buildSimulationSnapshot(simulation);
 
-    if (!sim) return;
+    if (!sim) {
+      setDriveUploadStatus({
+        success: false,
+        message: language === 'hindi' 
+          ? 'ସିମୁଲେସନ୍ ତଥ୍ୟ ଉପଲବ୍ଧ ନାହିଁ।'
+          : 'No simulation data available.',
+      });
+      return;
+    }
+
+    // Check if Google API is loaded
+    if (!googleApiLoaded) {
+      setDriveUploadStatus({
+        success: false,
+        message: language === 'hindi'
+          ? 'Google API ଲୋଡ଼ ହୋଇନାହିଁ। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+          : 'Google API not loaded. Please try again.',
+      });
+      return;
+    }
 
     // 1) Comprehension columns (always English)
     const comprehensionCols = buildComprehensionColumns(sim);
@@ -1361,31 +1432,24 @@ const App = () => {
     const season2 = buildSeasonColumns(sim, 1);
     const season3 = buildSeasonColumns(sim, 2);
 
-    // 3) CSV row (same structure as handleExportCSV)
+    // 3) CSV row
     const csvData = [
       {
         Name: sim.farmer.name,
         farmerID: sim.farmer.id,
         Treatment: sim.treatment || treatmentFilter,
         InitialKhetscore: sim.farmer.initialKhetscore,
-
         ...comprehensionCols,
-
-        // Season 1
         Season1_Practices: season1.practices,
         Season1_Likelihood: season1.likelihood,
         Season1_WeatherShock: season1.weather,
         Season1_EndScore: season1.endScore,
         Season1_NoWeatherScore: season1.noWeatherScore,
-
-        // Season 2
         Season2_Practices: season2.practices,
         Season2_Likelihood: season2.likelihood,
         Season2_WeatherShock: season2.weather,
         Season2_EndScore: season2.endScore,
         Season2_NoWeatherScore: season2.noWeatherScore,
-
-        // Season 3
         Season3_Practices: season3.practices,
         Season3_Likelihood: season3.likelihood,
         Season3_WeatherShock: season3.weather,
@@ -1399,33 +1463,21 @@ const App = () => {
       .toISOString()
       .split('T')[0]}.csv`;
 
-    // === existing Drive logic, unchanged ===
-    if (!googleApiLoaded) {
-      setDriveUploadStatus({
-        success: false,
-        message:
-          language === 'hindi'
-            ? 'Google API ଲୋଡ୍ ହୋଇନାହିଁ। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
-            : 'Google API not loaded. Please try again.',
-      });
-      return;
-    }
-
     setUploadingToDrive(true);
     setDriveUploadStatus(null);
 
     try {
       const result = await uploadToGoogleDrive(csvContent, fileName);
+      
       setDriveUploadStatus({
         success: true,
-        message:
-          language === 'hindi'
-            ? 'CSV ଫାଇଲ୍ ସଫଳତାର ସହିତ Google Drive କୁ ଅପଲୋଡ୍ ହୋଇଛି।'
-            : 'CSV file successfully uploaded to Google Drive.',
+        message: language === 'hindi'
+          ? 'CSV ଫାଇଲ୍ ସଫଳତାର ସହିତ Google Drive କୁ ଅପଲୋଡ଼ ହୋଇଛି।'
+          : 'CSV file successfully uploaded to Google Drive.',
         link: result?.webViewLink,
       });
 
-      // Mark this farmer’s simulation as uploaded (if you track that)
+      // Mark this farmer's simulation as uploaded
       if (sim?.farmer?.id) {
         setUploadedSimulationIds((prev) =>
           prev.includes(sim.farmer.id) ? prev : [...prev, sim.farmer.id]
@@ -1433,12 +1485,29 @@ const App = () => {
       }
     } catch (error) {
       console.error('Error uploading to Google Drive:', error);
+      
+      let errorMessage = language === 'hindi'
+        ? 'Google Drive କୁ ଅପଲୋଡ଼ କରିବାରେ ତ୍ରୁଟି ହେଲା।'
+        : 'Error uploading to Google Drive.';
+      
+      // Specific error messages
+      if (error.message?.includes('popup') || error.message?.includes('channel')) {
+        errorMessage = language === 'hindi'
+          ? 'ପପ୍-ଅପ୍ ବ୍ଲକ୍ ହୋଇଛି କିମ୍ବା ବନ୍ଦ ହୋଇଗଲା। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+          : 'Popup was blocked or closed. Please allow popups and try again.';
+      } else if (error.message?.includes('access_denied') || error.message?.includes('Authentication failed')) {
+        errorMessage = language === 'hindi'
+          ? 'ଆପଣ ଅନୁମତି ପ୍ରଦାନ କରିନାହାଁନ୍ତି। ଦୟାକରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।'
+          : 'Access denied. Please grant permission and try again.';
+      } else if (error.message?.includes('network') || error.message?.includes('Failed to fetch')) {
+        errorMessage = language === 'hindi'
+          ? 'ନେଟୱାର୍କ ସମସ୍ୟା। ଦୟାକରି ଆପଣଙ୍କର ସଂଯୋଗ ଯାଞ୍ଚ କରନ୍ତୁ।'
+          : 'Network error. Please check your connection.';
+      }
+      
       setDriveUploadStatus({
         success: false,
-        message:
-          language === 'hindi'
-            ? 'Google Drive କୁ ଅପଲୋଡ୍ କରିବାରେ ତ୍ରୁଟି ହେଲା।'
-            : 'Error uploading to Google Drive.',
+        message: errorMessage,
       });
     } finally {
       setUploadingToDrive(false);
@@ -1525,7 +1594,7 @@ const App = () => {
     return (
       <div className="bg-gray-50 p-6 rounded-lg mt-6">
         <h4 className="text-lg font-semibold text-gray-700 mb-6 text-center">{title}</h4>
-        <div className="flex items-end justify-center gap-4 sm:gap-6 h-64">
+        <div className="flex items-end justify-center gap-2 sm:gap-3 h-64"> {/* Changed from gap-4 sm:gap-6 */}
           {values.map((value, idx) => {
             const prevValue = idx > 0 ? values[idx - 1] : value;
             const isStart = idx === 0;
@@ -1566,7 +1635,7 @@ const App = () => {
           
           {/* Single NoWeather bar at the end */}
           {noWeatherValues && (
-            <div className="flex flex-col items-center border-l-2 border-gray-300 pl-4 sm:pl-6 ml-4 sm:ml-6">
+            <div className="flex flex-col items-center border-l-2 border-gray-300 pl-3 sm:pl-4 ml-2 sm:ml-3"> {/* Also reduced padding/margin here */}
               <div className="text-sm sm:text-base font-bold mb-2 text-orange-600">
                 {noWeatherValues[noWeatherValues.length - 1]}
               </div>
@@ -1605,7 +1674,7 @@ const App = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex flex-col items-center justify-center p-4 sm:p-8">
-        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        <div className="w-full max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
           {/* Header */}
           <div className="bg-green-600 text-white py-8 px-2 text-center flex items-center gap-3 justify-center">
             <div className="inline-block bg-white/20 p-1 rounded-full mb-1">
@@ -1700,7 +1769,7 @@ const App = () => {
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex flex-col items-center justify-center p-4 sm:p-8">
-        <div className="w-full h-[calc(100vh-4rem)] max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        <div className="w-full max-w-full bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
           {/* Header */}
           <div className="bg-green-600 text-white p-3 text-center">
             <div className="inline-block bg-white/20 p-2 rounded-full mb-4">
@@ -2174,6 +2243,9 @@ const App = () => {
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    aria-label="User menu"
+                    aria-expanded={showUserMenu}
+                    aria-haspopup="true"
                   >
                     <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
                       {currentUser.full_name.charAt(0).toUpperCase()}
@@ -2189,7 +2261,7 @@ const App = () => {
                   </button>
                   
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-60">
                       <div className="px-4 py-3 border-b border-gray-200">
                         <p className="text-sm text-gray-600">{t('welcome')}</p>
                         <p className="text-base font-semibold text-gray-800">{currentUser.full_name}</p>
@@ -2238,6 +2310,34 @@ const App = () => {
               </button>
             </div>
           </div>
+
+          {/* ADD THIS ERROR DISPLAY SECTION */}
+          {refreshError && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-red-800 font-medium">{refreshError}</p>
+              </div>
+              <button
+                onClick={() => setRefreshError('')}
+                className="text-red-400 hover:text-red-600 transition-colors"
+                aria-label="Close error message"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          {refreshSuccess && (
+            <div className="mb-6 flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg animate-fadeIn">
+              <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-sm text-green-800 font-medium">{t('refreshSuccess')}</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {/* Total Simulations – now from DB-backed farmersData */}
@@ -2440,11 +2540,10 @@ const App = () => {
         <UploadStatusModal 
           status={driveUploadStatus} 
           onClose={() => setDriveUploadStatus(null)}
-          language={language}
-        />{/* Upload Status Modal */}
-        <UploadStatusModal 
-          status={driveUploadStatus} 
-          onClose={() => setDriveUploadStatus(null)}
+          onRetry={() => {
+            setDriveUploadStatus(null);
+            handleUploadToDrive();
+          }}
           language={language}
         />
       </div>
@@ -2607,23 +2706,27 @@ const App = () => {
         </nav>
 
         <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-          <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-            <div className="text-center mb-8">
-              <div className="inline-block bg-blue-100 p-4 rounded-full mb-4">
-                <BookOpen className="w-12 h-12 text-blue-700" />
+          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8">
+            {/* Fixed Header Section */}
+            <div className="mb-6">
+              <div className="text-center">
+                <div className="inline-block bg-blue-100 p-4 rounded-full mb-4">
+                  <BookOpen className="w-12 h-12 text-blue-700" />
+                </div>
+                <h2 className="text-3xl font-bold text-green-800 mb-2">{t('comprehensionCheck')}</h2>
+                <p className="text-gray-600">{t('comprehensionInstructions')}</p>
               </div>
-              <h2 className="text-3xl font-bold text-green-800 mb-2">{t('comprehensionCheck')}</h2>
-              <p className="text-gray-600">{t('comprehensionInstructions')}</p>
+
+              {error && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg mt-4">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{error}</span>
+                </div>
+              )}
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg mb-6">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <div className="space-y-6 mb-8">
+            {/* Scrollable Questions Section */}
+            <div className="space-y-6 mb-6 pr-2" style={{ maxHeight: 'calc(100vh - 450px)', overflowY: 'auto' }}>
               {questions.map((question, index) => (
                 <div key={question.id} className="border-2 border-gray-200 rounded-lg p-6 hover:border-green-300 transition-colors">
                   <h3 className="font-semibold text-gray-800 mb-4">
@@ -2655,6 +2758,14 @@ const App = () => {
               ))}
             </div>
 
+            {/* Progress Indicator */}
+            <div className="mb-4 text-center">
+              <p className="text-sm text-gray-600">
+                {t('answered')}: {Object.keys(comprehensionAnswers).length} / {questions.length}
+              </p>
+            </div>
+
+            {/* Fixed Buttons Section */}
             <div className="flex gap-4">
               <button
                 onClick={() => {
@@ -2677,12 +2788,6 @@ const App = () => {
               >
                 {t('continue')} →
               </button>
-            </div>
-            {/* Add progress indicator */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-600">
-                {t('answered')}: {Object.keys(comprehensionAnswers).length} / {questions.length}
-              </p>
             </div>
           </div>
         </div>
@@ -2967,7 +3072,7 @@ const App = () => {
               </div>
             )}
             
-            <div className="space-y-8 max-h-[600px] overflow-y-auto mb-6 pr-2">
+            <div className="space-y-8 mb-6 pr-2" style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
               {Object.entries(groupedPractices).map(([category, categoryPractices]) => (
                 <div key={category} className="border-b border-gray-200 pb-6 last:border-b-0">
                   <h3 className="font-bold text-lg text-green-700 mb-4 bg-green-50 p-3 rounded-lg">
